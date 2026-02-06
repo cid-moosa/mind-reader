@@ -1,0 +1,1030 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Guess Your Number — Interactive</title>
+    <style>
+      :root{--bg:#071426;--card:#0f1724;--accent:#06b6d4;--accent-2:#7c3aed;--muted:#9ca3af;--success:#10b981;--danger:#ef4444}
+  /* danger theme toggled when user enters below minimum */
+  .theme-danger{--accent:#ff4d4d;--accent-2:#ff7a5a}
+  /* ensure primary buttons reflect danger accent when theme is active */
+  .theme-danger .btn{background:linear-gradient(90deg,var(--accent),var(--accent-2));}
+  .theme-danger .btn::before{background:radial-gradient(closest-side, rgba(255,77,77,0.18), rgba(255,77,77,0.06) 45%, transparent 60%)}
+      *{box-sizing:border-box}
+      html,body{height:100%}
+      body{margin:0;font-family:Inter,system-ui,Segoe UI,Roboto,Arial;background:linear-gradient(180deg,var(--bg),#041021);color:#e6eef8;display:flex;align-items:center;justify-content:center;padding:24px}
+      .wrap{width:100%;max-width:980px}
+      .panel{background:linear-gradient(180deg,rgba(255,255,255,0.02),transparent);padding:24px;border-radius:14px;border:1px solid rgba(255,255,255,0.04);box-shadow:0 10px 30px rgba(2,6,23,0.6)}
+      h1{margin:0 0 8px;font-size:1.6rem}
+      p.lead{color:var(--muted);margin:0 0 14px}
+
+      /* Sections */
+      .section{display:none}
+      .section.active{display:block}
+
+      /* Welcome */
+      .welcome{display:flex;flex-direction:column;align-items:center;gap:12px}
+  .logo{width:84px;height:84px;border-radius:12px;background:linear-gradient(135deg,var(--accent),var(--accent-2));display:flex;align-items:center;justify-content:center;font-weight:800;color:#041026;font-size:1.6rem}
+  /* floating logo */
+  .logo{animation:logoFloat 3.6s ease-in-out infinite;transform-origin:center;backface-visibility:hidden}
+  /* 3D tilt and shine on hover (no rotate to avoid 'waving' effect) */
+  .logo:hover{transform:translateY(-6px) scale(1.02);box-shadow:0 18px 40px rgba(2,6,23,0.5)}
+  @keyframes logoFloat{0%{transform:translateY(0)}50%{transform:translateY(-6px)}100%{transform:translateY(0)}}
+  /* primary button gradient: warm red-orange -> cool blue-cyan */
+  /* enable a soft blurred glow behind buttons using a ::before pseudo-element
+    - position:relative so the pseudo-element can be absolutely positioned
+    - z-index on pseudo-element is negative so it sits behind the button
+    - ghost buttons use a lower-intensity glow */
+  /* default: blue primary button (cool) */
+  .btn{background:linear-gradient(90deg,#0ea5ff,#0369a1);color:#fff;border:0;padding:10px 14px;border-radius:10px;cursor:pointer;font-weight:700;transition:transform .18s ease,box-shadow .18s ease,background .18s;position:relative;overflow:visible;z-index:1}
+  .btn::before{content:'';position:absolute;left:50%;top:50%;transform:translate(-50%,-50%) scale(.92);width:160%;height:160%;border-radius:14px;pointer-events:none;z-index:-1;opacity:0;filter:blur(14px);transition:opacity .22s cubic-bezier(.2,.9,.2,1),transform .22s cubic-bezier(.2,.9,.2,1),background .22s}
+  .btn:hover::before,.btn:focus::before{opacity:1;transform:translate(-50%,-50%) scale(1)}
+  /* default glow: cool blue halo */
+  .btn::before{background:radial-gradient(closest-side, rgba(14,165,255,0.22), rgba(3,105,161,0.08) 45%, transparent 60%)}
+  /* ghost buttons keep a much subtler cool glow */
+  .btn.ghost::before{background:radial-gradient(closest-side, rgba(255,255,255,0.04), rgba(124,58,237,0.04) 45%, transparent 70%);filter:blur(8px)}
+  /* keyboard focus visible via glow */
+  .btn:focus-visible::before{opacity:1;transform:translate(-50%,-50%) scale(1.02);filter:blur(12px)}
+  .btn.ghost{background:transparent;border:1px solid rgba(255,255,255,0.06);color:var(--muted)}
+  /* Parity buttons (odd/even/skip) - harmonized variants */
+  /* parity buttons inherit base style (blue) but remain distinct if needed */
+  #oddBtn,#evenBtn,#skipParity{background:linear-gradient(90deg,#0ea5ff,#0369a1);color:#fff;border:none;box-shadow:0 8px 28px rgba(3,105,161,0.06)}
+  /* hover/focus micro-interactions: transform + switch to orange 'fire' gradient */
+  #oddBtn:hover,#evenBtn:hover,#skipParity:hover{transform:translateY(-6px) scale(1.03);transition:transform .18s, box-shadow .2s, background .22s}
+  #oddBtn:hover,#evenBtn:hover,#skipParity:hover{background:linear-gradient(90deg,#ff6b3d,#ff9a4d);color:#220;box-shadow:0 18px 48px rgba(255,110,60,0.22)}
+  #oddBtn:focus,#evenBtn:focus,#skipParity:focus{outline:3px solid rgba(255,255,255,0.06);box-shadow:0 12px 36px rgba(0,0,0,0.32)}
+  /* removed small accent pseudo-elements on parity buttons for a cleaner look */
+  /* button hover/active */
+  .btn:hover{transform:translateY(-4px) scale(1.03);box-shadow:0 10px 30px rgba(255,110,60,0.10)}
+  .btn:active{transform:translateY(-1px) scale(.99)}
+  .btn.ghost:hover{transform:translateY(-3px) scale(1.02);box-shadow:0 8px 22px rgba(124,58,237,0.08)}
+  /* disabled button visuals used for Begin when input is invalid */
+  .btn[disabled]{opacity:.45;pointer-events:none}
+
+  /* welcome enter/exit animations */
+  .welcome.enter{animation:welcomeIn .6s ease both}
+  .welcome.exit{animation:welcomeOut .45s ease both}
+  @keyframes welcomeIn{0%{transform:translateY(8px) scale(.98);opacity:0}100%{transform:none;opacity:1}}
+  @keyframes welcomeOut{0%{transform:none;opacity:1}100%{transform:translateY(-18px) scale(.96);opacity:0}}
+
+  /* gentle 3D panel tilt when on welcome to add depth */
+  .panel.welcome-3d{transform-style:preserve-3d;transition:transform .7s cubic-bezier(.2,.9,.2,1);}
+  .section#welcome .panel.welcome-3d{transform:rotateX(2deg) translateY(-6px)}
+
+  /* 3D layered restart spinner (centerLoader) */
+  #centerLoader .ring{width:48px;height:48px;border-radius:50%;position:relative}
+  #centerLoader .ring .inner{position:absolute;inset:0;border-radius:50%;border:4px solid rgba(255,255,255,0.06);border-top-color:rgba(255,107,61,0.95);animation:spin 1s linear infinite}
+  #centerLoader .ring .inner.two{border-top-color:var(--accent);border-width:3px;animation-duration:1.4s}
+  #centerLoader .ring .inner.three{border-top-color:rgba(124,58,237,0.9);border-width:2px;animation-duration:1.8s}
+
+  /* result buttons animation - make all three animate and share the palette */
+  /* result buttons: animate a blue -> red cycling gradient for all buttons in the result area */
+  #result button, #result .btn{transition:transform .16s ease, box-shadow .18s ease, background .22s; background:linear-gradient(90deg,#0ea5ff 0%, #60a5fa 25%, #ff7a5a 60%, #ff4d4d 100%);color:#041026;font-weight:800;background-size:300% 100%;animation:resultGradient 5.5s linear infinite}
+  #result button:hover, #result .btn:hover{transform:translateY(-6px) scale(1.03);box-shadow:0 18px 48px rgba(255,77,77,0.16)}
+  /* ensure ghost variants still show the animated palette in result area */
+  #result .btn.ghost{background:linear-gradient(90deg,#0ea5ff 0%, #60a5fa 25%, #ff7a5a 60%, #ff4d4d 100%);color:#041026;border:none}
+  /* keyboard focus visible for accessibility */
+  #result button:focus-visible, #result .btn:focus-visible{outline:3px solid rgba(255,255,255,0.12);outline-offset:4px;}
+  @keyframes resultGradient{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
+
+  /* Force exact same animated palette & glow for all actionable buttons in the result area */
+  #result #again, #result #wrongBtn, #result #newGame, #result button{ 
+    background:linear-gradient(90deg,#0ea5ff 0%, #60a5fa 25%, #ff7a5a 60%, #ff4d4d 100%);
+    background-size:300% 100%;
+    animation:resultGradient 5.5s linear infinite;
+    color:#041026;
+    font-weight:800;
+    border:none;
+    padding:10px 14px;
+    border-radius:10px;
+  }
+  #result #again:hover, #result #wrongBtn:hover, #result #newGame:hover, #result button:hover{
+    transform:translateY(-6px) scale(1.03);
+    box-shadow:0 20px 48px rgba(255,77,77,0.18);
+  }
+  /* keep the soft halo glow behind these buttons using the ::before pseudo-element */
+  #result #again::before, #result #wrongBtn::before, #result #newGame::before, #result button::before{
+    background:radial-gradient(closest-side, rgba(14,165,255,0.22), rgba(3,105,161,0.06) 45%, transparent 60%);
+  }
+  /* stronger focus-visible for keyboard users */
+  #result #again:focus-visible, #result #wrongBtn:focus-visible, #result #newGame:focus-visible, #result button:focus-visible{
+    outline:3px solid rgba(255,255,255,0.12);outline-offset:4px;
+  }
+
+  /* Apply same look to the explain panel's Back to result and Investigate/Play again buttons */
+  #explain #backToResult, #explain #investigateBtn, #explain #restartFromExplain, #explain button{
+    background:linear-gradient(90deg,#0ea5ff 0%, #60a5fa 25%, #ff7a5a 60%, #ff4d4d 100%);
+    background-size:300% 100%;
+    animation:resultGradient 5.5s linear infinite;
+    color:#041026;
+    font-weight:800;
+    border:none;
+    padding:10px 14px;border-radius:10px;
+  }
+  #explain #backToResult:hover, #explain #investigateBtn:hover, #explain #restartFromExplain:hover, #explain button:hover{
+    transform:translateY(-6px) scale(1.03); box-shadow:0 18px 48px rgba(255,77,77,0.16);
+  }
+  #explain #backToResult:focus-visible, #explain #investigateBtn:focus-visible, #explain #restartFromExplain:focus-visible, #explain button:focus-visible{outline:3px solid rgba(255,255,255,0.12);outline-offset:4px}
+
+  /* welcome background blobs */
+  .welcome{position:relative;overflow:visible}
+  .welcome .blob{position:absolute;border-radius:50%;filter:blur(32px);opacity:0.12;z-index:0}
+  .welcome .blob.one{width:220px;height:220px;background:radial-gradient(circle at 30% 30%, #ff8a4d, transparent 40%);left:-40px;top:-40px}
+  .welcome .blob.two{width:160px;height:160px;background:radial-gradient(circle at 70% 60%, #06b6d4, transparent 40%);right:-20px;bottom:-20px}
+  @keyframes blobFloat1{0%{transform:translateY(0) scale(1)}50%{transform:translateY(-12px) scale(1.06)}100%{transform:translateY(0) scale(1)}}
+  @keyframes blobFloat2{0%{transform:translateY(0) scale(1)}50%{transform:translateY(10px) scale(.98)}100%{transform:translateY(0) scale(1)}}
+  /* welcome canvas for fire trail - full viewport overlay */
+  #welcomeTrail{position:fixed;left:0;top:0;width:100vw;height:100vh;z-index:60;pointer-events:none;display:none}
+  /* stronger perspective for 3D effect */
+  .panel{perspective:1200px}
+
+  .game.enter{animation:gameIn .5s ease both}
+  @keyframes gameIn{0%{transform:translateY(18px);opacity:0}100%{transform:none;opacity:1}}
+
+  /* panel shift when welcome exits */
+  .panel.shift{animation:panelShift .45s ease both}
+  @keyframes panelShift{0%{transform:translateY(0)}100%{transform:translateY(-8px)}}
+
+  /* modal open animation */
+  #infoModal{display:none}
+  #infoModal.open{display:flex;animation:modalIn .24s ease both}
+  @keyframes modalIn{0%{opacity:0;transform:scale(.98)}100%{opacity:1;transform:scale(1)}}
+
+      /* difficulty */
+      .difficulty{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+      input[type=number]{padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,0.06);background:transparent;color:inherit;width:120px}
+
+      /* question card */
+      .card{background:var(--card);padding:16px;border-radius:12px;border:1px solid rgba(255,255,255,0.04);box-shadow:0 6px 18px rgba(2,6,23,0.5)}
+      .cardTitle{font-weight:700;margin-bottom:10px}
+      .nums{display:flex;flex-wrap:wrap;gap:8px}
+      .num{background:rgba(255,255,255,0.03);padding:6px 8px;border-radius:8px;font-size:0.95rem}
+
+      .controls{display:flex;gap:10px;align-items:center;margin-top:12px}
+
+      /* animations */
+      .pop{animation:pop .36s ease both}
+      @keyframes pop{0%{transform:scale(.9);opacity:0}60%{transform:scale(1.04);opacity:1}100%{transform:scale(1)}}
+
+      .confetti-piece{position:absolute;width:8px;height:14px;background:var(--accent);opacity:0;transform:translateY(-20px) rotate(10deg);border-radius:2px}
+      .explode{animation:explode .9s ease forwards}
+      @keyframes explode{0%{opacity:1;transform:translateY(0) rotate(0)}100%{opacity:0;transform:translateY(-200px) rotate(720deg)}}
+
+      .shake{animation:shake .6s ease}
+      @keyframes shake{0%{transform:translateX(0)}25%{transform:translateX(-8px)}50%{transform:translateX(8px)}75%{transform:translateX(-6px)}100%{transform:translateX(0)}}
+
+      .result{font-size:1.25rem;margin-top:12px}
+      .muted{color:var(--muted)}
+      footer{margin-top:14px;color:var(--muted);font-size:0.85rem}
+      /* Responsive / Mobile improvements */
+      @media (max-width:720px){
+        .wrap{padding:12px}
+        .panel{padding:16px;border-radius:12px}
+        h1{font-size:1.3rem}
+        .logo{width:68px;height:68px;font-size:1.2rem}
+        .btn{padding:10px 12px;border-radius:10px;font-size:1rem}
+        .btn, .btn.ghost{width:100%;display:inline-flex;justify-content:center}
+        #welcome .welcome > div{width:100%}
+        .difficulty{flex-direction:column;align-items:flex-start}
+        input[type=number]{width:100%}
+        .controls{flex-direction:column;align-items:stretch}
+        .controls .btn{width:100%}
+        .nums{gap:6px}
+        .num{flex:1 0 20%;padding:8px 10px;font-size:0.95rem;text-align:center}
+        #cardNumbers{max-height:36vh;overflow:auto;padding-right:6px}
+        .card{padding:12px}
+        #resultCard{padding:14px}
+        footer{font-size:0.8rem}
+      }
+      @media (max-width:420px){
+        .num{flex:1 0 30%;font-size:0.9rem}
+        h1{font-size:1.15rem}
+        .logo{width:60px;height:60px}
+        .btn{padding:10px;border-radius:10px;font-size:0.98rem}
+        #cardNumbers{max-height:42vh}
+      }
+      /* keypad & preset styles */
+      #keypad .btn{padding:12px;font-size:1.05rem;border-radius:10px}
+      .preset{width:100%;text-align:center}
+  /* Investigate full-screen overlay */
+  #investigateDetailFull{background:rgba(4,6,12,0.6);position:fixed;inset:0;z-index:80;display:none;align-items:center;justify-content:center}
+  #investigateDetailFull .card{max-height:86vh;overflow:auto}
+  #investigateDetailFull.enter{animation:modalIn .32s ease both}
+  #investigateDetailFull.exit{animation:welcomeOut .36s ease both}
+  /* Candidate buttons simplified */
+  #investigateList .btn{padding:10px;background:transparent;border:1px solid rgba(255,255,255,0.06);color:var(--muted);border-radius:8px}
+  #investigateList .btn:hover{color:var(--accent);transform:translateY(-4px)}
+  /* badges and mismatch highlight */
+  .badge{display:inline-block;padding:6px 8px;border-radius:8px;font-weight:700;margin-right:8px}
+  .badge.yes{background:rgba(16,185,129,0.12);color:var(--success);border:1px solid rgba(16,185,129,0.12)}
+  .badge.no{background:rgba(239,68,68,0.06);color:var(--muted);border:1px solid rgba(255,255,255,0.03)}
+  .badge.wrong{background:linear-gradient(90deg,#ff4d4d,#ff8a4d);color:#200;box-shadow:0 8px 30px rgba(255,72,72,0.18);border:1px solid rgba(255,72,72,0.06)}
+  .mismatch{border:1px solid rgba(239,68,68,0.3);box-shadow:0 10px 30px rgba(239,68,68,0.06)}
+  /* fire glow animation for wrong answer */
+  @keyframes fireGlow{0%{box-shadow:0 0 0 rgba(255,90,90,0)}50%{box-shadow:0 6px 30px rgba(255,90,90,0.28)}100%{box-shadow:0 0 0 rgba(255,90,90,0)}}
+  .badge.wrong{animation:fireGlow 1.2s ease-in-out infinite}
+  /* style the card snapshot inside full detail */
+  .snapshot{display:flex;flex-direction:column;gap:8px;margin-top:10px}
+  .snapshot .card{background:rgba(0,0,0,0.28);border-radius:10px;padding:10px}
+  .snapshot .nums{display:flex;flex-wrap:wrap;gap:6px}
+  .snapshot .num{background:rgba(255,255,255,0.03);padding:6px 8px;border-radius:8px;font-size:0.95rem}
+  /* card-level mismatch glow: highlights the entire card when a candidate differs from your answer */
+  .card.mismatch{border:1px solid rgba(255,72,72,0.22);box-shadow:0 12px 40px rgba(255,72,72,0.12);animation:cardFire 1.2s ease-in-out infinite}
+  @keyframes cardFire{0%{box-shadow:0 8px 20px rgba(255,72,72,0.06)}50%{box-shadow:0 18px 48px rgba(255,90,90,0.22)}100%{box-shadow:0 8px 20px rgba(255,72,72,0.06)}}
+  /* positive match green glow */
+  .card.match{border:1px solid rgba(16,185,129,0.18);box-shadow:0 12px 40px rgba(16,185,129,0.08);animation:cardGlow 1.4s ease-in-out infinite}
+  @keyframes cardGlow{0%{box-shadow:0 8px 18px rgba(16,185,129,0.04)}50%{box-shadow:0 16px 36px rgba(16,185,129,0.14)}100%{box-shadow:0 8px 18px rgba(16,185,129,0.04)}}
+  .num.selected{background:rgba(6,182,198,0.12);border:1px solid rgba(6,182,198,0.08)}
+  /* bottom loading pill */
+  .bottom-loader{position:fixed;left:50%;transform:translateX(-50%);bottom:18px;background:rgba(255,255,255,0.03);padding:8px 12px;border-radius:999px;border:1px solid rgba(255,255,255,0.04);display:flex;gap:10px;align-items:center;z-index:90}
+  .dots{display:inline-flex;gap:6px}
+  .dot{width:8px;height:8px;border-radius:999px;background:var(--muted);opacity:0.6}
+  .dot.animate{animation:dotPulse 1s infinite}
+  @keyframes dotPulse{0%{transform:scale(.8);opacity:.4}50%{transform:scale(1.15);opacity:1}100%{transform:scale(.8);opacity:.4}}
+  .bottom-loader.hidden{opacity:0;transform:translateX(-50%) translateY(8px);pointer-events:none;transition:opacity .36s,transform .36s}
+  @keyframes spin{0%{transform:rotate(0)}100%{transform:rotate(360deg)}}
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <div class="panel">
+        
+        <section id="welcome" class="section active">
+          <div class="welcome">
+            <canvas id="welcomeTrail" aria-hidden="true" style="position:absolute;inset:0;width:100%;height:100%;z-index:5;pointer-events:none"></canvas>
+            <div class="blob one" aria-hidden="true"></div>
+            <div class="blob two" aria-hidden="true"></div>
+            <div class="logo">G</div>
+            <h1>Welcome — Guess My Number</h1>
+            <p class="lead">A fun math trick: pick a number and I'll ask a few questions to predict it. Click Start to continue.</p>
+            <div style="display:flex;gap:10px;align-items:center">
+              <!-- Start button removed: Use Difficulty -> Begin to start the game -->
+              <button id="howBtn" class="btn ghost">Info</button>
+            </div>
+          </div>
+        </section>
+
+        <!-- Candidates / explanation section shown when prediction is wrong -->
+        <section id="explain" class="section">
+          <div style="display:flex;flex-direction:column;gap:12px">
+            <h1 style="margin:0">Let's investigate</h1>
+            <p class="muted">Here are numbers that match most of your answers. Tap a number to see which question likely caused the mismatch.</p>
+            <div id="candidateList" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(100px,1fr));gap:8px;margin-top:8px"></div>
+            <div id="candidateExplain" class="card" style="margin-top:12px;display:none">
+              <div id="explainTitle" class="cardTitle">Explanation</div>
+              <div id="explainBody" class="muted" style="margin-top:8px"></div>
+            </div>
+            <div style="display:flex;gap:8px;margin-top:12px">
+              <button id="backToResult" class="btn ghost">Back to result</button>
+              <button id="investigateBtn" class="btn">Investigate</button>
+              <button id="restartFromExplain" class="btn">Play again</button>
+            </div>
+          </div>
+        </section>
+
+        <!-- Investigation: broader candidate analysis -> ranked by number of differing answers -->
+        <section id="investigate" class="section">
+          <div style="display:flex;flex-direction:column;gap:12px">
+            <h1 style="margin:0">Investigation — possible numbers</h1>
+            <p class="muted">These numbers are ranked by how closely they match your answers. Fewer differences means more likely. Click a number to see which questions differ.</p>
+            <div id="investigateList" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(90px,1fr));gap:8px;margin-top:8px;max-height:360px;overflow:auto"></div>
+            <div id="investigateDetail" class="card" style="margin-top:12px;display:none">
+              <div id="investigateTitle" class="cardTitle">Candidate detail</div>
+              <div id="investigateBody" class="muted" style="margin-top:8px"></div>
+            </div>
+            <div style="display:flex;gap:8px;margin-top:12px">
+              <button id="backToExplain" class="btn ghost">Back</button>
+              <button id="restartFromInvestigate" class="btn">Play again</button>
+            </div>
+          </div>
+        </section>
+
+        <!-- Full-window candidate detail (animated) -->
+        <section id="investigateDetailFull" class="section" aria-hidden="true" style="display:none;align-items:center;justify-content:center;">
+          <div class="card pop" style="max-width:820px;width:95%;padding:20px;position:relative">
+            <button id="closeInvestigateFull" class="btn ghost" style="position:absolute;right:12px;top:12px">Close</button>
+            <div id="investigateFullTitle" class="cardTitle">Candidate</div>
+            <div id="investigateFullBody" class="muted" style="margin-top:12px;white-space:pre-wrap"></div>
+            <div style="display:flex;gap:8px;margin-top:12px;justify-content:flex-end">
+              <button id="investigateBackToList" class="btn ghost">Back to list</button>
+              <button id="investigateRestart" class="btn">Play again</button>
+            </div>
+          </div>
+        </section>
+
+        
+        
+        
+        
+        <!-- Main landing page (after welcome) -->
+        <section id="main" class="section">
+          <div style="display:flex;flex-direction:column;align-items:center;gap:12px">
+            <h1 style="margin:0">Guess My Number — Ready?</h1>
+            <p class="muted" style="max-width:560px;text-align:center">Press Start to begin. The game will ask a few short questions to guess your chosen number — answer honestly. (Brief help shown below.)</p>
+            <div style="height:12px"></div>
+            <div class="muted" style="margin-top:8px;text-align:center">How to play: pick a number within the chosen limit. You'll answer a short parity question, then a few yes/no screens. Tap clearly for best results.</div>
+          </div>
+        </section>
+
+        <!-- Difficulty / settings (dial pad + presets) -->
+        <section id="difficultySection" class="section">
+          <div style="display:flex;flex-direction:column;gap:12px">
+            <h1 style="margin:0">Set maximum (difficulty)</h1>
+            <div style="display:flex;gap:12px;align-items:flex-start;flex-wrap:wrap">
+              <div style="flex:1;min-width:220px">
+                <label class="muted">Dial your max value</label>
+                <input id="dialInput" type="text" inputmode="numeric" pattern="[0-9]*" placeholder="e.g. 31" readonly style="width:100%;padding:12px;border-radius:8px;border:1px solid rgba(255,255,255,0.06);background:transparent;color:inherit;margin-top:6px;font-size:1.1rem;text-align:center" />
+                <div id="dialHint" class="muted" style="margin-top:6px;font-size:0.95rem">Minimum value: 15</div>
+                <div id="dialError" class="muted" style="margin-top:6px;color:#ffb4a2;display:none;font-size:0.95rem">Please enter a number >= 15</div>
+                <div id="keypad" style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px">
+                  <button class="key btn">1</button>
+                  <button class="key btn">2</button>
+                  <button class="key btn">3</button>
+                  <button class="key btn">4</button>
+                  <button class="key btn">5</button>
+                  <button class="key btn">6</button>
+                  <button class="key btn">7</button>
+                  <button class="key btn">8</button>
+                  <button class="key btn">9</button>
+                  <button id="clearKey" class="btn ghost">Clear</button>
+                  <button class="key btn">0</button>
+                  <button id="backspaceKey" class="btn ghost">⌫</button>
+                </div>
+              </div>
+              <!-- Preset options removed: use the dial above to enter a custom max value -->
+            </div>
+            <div style="display:flex;gap:8px">
+              <button id="beginGame" class="btn" disabled>Begin</button>
+            </div>
+          </div>
+        </section>
+
+        <section id="game" class="section">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">
+            <div>
+              <h1 style="margin:0">Game</h1>
+              <p class="muted">Answer the following questions to help the system guess your number.</p>
+            </div>
+            <!-- keep a hidden maxInput so existing JS can reference it if needed -->
+            <input id="maxInput" type="hidden" value="31" />
+          </div>
+
+          <hr style="opacity:.06;margin:12px 0" />
+
+          <!-- Parity prompt (odd/even) shown after difficulty selection -->
+          <div id="parityArea" class="card" style="margin-top:12px;display:none">
+            <div class="cardTitle">Quick question — Is your number odd or even?</div>
+            <div style="margin-top:8px;color:var(--muted)">Answering now can save a question (parity = least-significant bit).</div>
+            <div style="display:flex;gap:10px;margin-top:12px;flex-wrap:wrap">
+              <button id="oddBtn" class="btn">Odd</button>
+              <button id="evenBtn" class="btn ghost">Even</button>
+              <button id="skipParity" class="btn ghost">Not sure / Skip</button>
+            </div>
+          </div>
+
+          <div id="questionArea" class="card" style="margin-top:12px">
+            <div id="cardTitle" class="cardTitle">Card 1 — bit value 1</div>
+            <div id="cardNumbers" class="nums" aria-live="polite"></div>
+            <div class="controls">
+              <button id="yesBtn" class="btn">Yes</button>
+              <button id="noBtn" class="btn ghost">No</button>
+              <div id="progress" class="muted"></div>
+            </div>
+          </div>
+        </section>
+
+        
+        <section id="result" class="section">
+          <div class="card pop" id="resultCard" style="position:relative;overflow:visible">
+            <div class="result">I predict your number is: <strong id="resultNum">—</strong></div>
+            <div id="resultMessage" class="muted" style="margin-top:8px"></div>
+            <div style="margin-top:12px;display:flex;gap:8px">
+              <button id="again" class="btn ghost">Play again</button>
+              <button id="wrongBtn" class="btn ghost">Answer is wrong</button>
+              <button id="newGame" class="btn">Change difficulty</button>
+            </div>
+          </div>
+        </section>
+
+        <footer> make sure the number that in the given question</footer><br>
+        <footer>if you do make any mistake in the quesion the answer will be also wrong so don't make any mistakes</footer>
+      </div>
+    </div>
+    <div id="infoModal" role="dialog" aria-modal="true" aria-hidden="true" style="display:none;position:fixed;inset:0;background:rgba(2,6,23,0.6);align-items:center;justify-content:center;z-index:40">
+      <div style="background:var(--card);padding:18px;border-radius:12px;max-width:820px;color:inherit;border:1px solid rgba(255,255,255,0.04);box-shadow:0 10px 30px rgba(0,0,0,0.6)">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:8px">
+          <strong>About this page — Details</strong>
+          <button id="closeInfo" class="btn ghost">Close</button>
+        </div>
+        <div style="max-height:60vh;overflow:auto;padding-right:8px;color:var(--muted);font-size:0.95rem;line-height:1.4">
+          <p><strong>Purpose</strong>: Interactive math trick that predicts a user's chosen integer between 1 and the selected maximum by asking which precomputed "cards" contain the number.</p>
+          <p><strong>Algorithm / Principle</strong>: Each card corresponds to a binary place value (1,2,4,8,...). When a user confirms their number appears on a card, that place value is added to a running sum. After all cards are asked, the sum is the predicted number.</p>
+          <p><strong>Inputs</strong>: A positive integer maximum (default 31). The user mentally selects a number in the range [1, max]. Then answers Yes/No for each card.</p>
+          <p><strong>Outputs</strong>: The predicted integer (sum of selected bit values). If the sum is outside [1, max], the system treats the result as invalid and shows a failure animation.</p>
+          <p><strong>Edge cases</strong>: If the user answers inconsistently or changes their number mid-flow the prediction can be invalid. Entering a non-integer or a value &lt; 2 will prompt an alert.</p>
+          <p><strong>Files & Structure</strong>: Single-file self-contained HTML with embedded CSS and JS. No backend required. To run, open <code>guess_number.html</code> in a browser.</p>
+          <p><strong>Animations</strong>: Pop animation for card transitions, confetti-like pieces on success, and shake animation on failure. Confetti elements are removed after animation to avoid DOM growth.</p>
+          <p><strong>Accessibility</strong>: The modal uses ARIA role dialog. Buttons are focusable. Keyboard navigation improvements can be added on request.</p>
+          <p><strong>Customization</strong>: To support larger ranges (e.g., up to 1023), increase the max value — the page will compute the required number of bit-questions automatically (number of bits = ceil(log2(max+1))).</p>
+          <p>If you'd like I can extract the JavaScript into a separate file, add unit tests for the card generation, or replace the DOM confetti with a canvas-based confetti library.</p>
+        </div>
+      </div>
+    </div>
+
+      <!-- bottom loading pill -->
+      <div id="bottomLoader" class="bottom-loader" role="status" aria-live="polite">
+        <div style="font-weight:700;color:var(--muted);font-size:0.95rem">Loading</div>
+        <div class="dots">
+          <div class="dot animate" style="animation-delay:0s"></div>
+          <div class="dot animate" style="animation-delay:.15s"></div>
+          <div class="dot animate" style="animation-delay:.3s"></div>
+        </div>
+
+        <!-- centered restart loader overlay -->
+        <div id="centerLoader" style="display:none;position:fixed;inset:0;align-items:center;justify-content:center;z-index:120;backdrop-filter:blur(2px);background:rgba(2,6,12,0.36)">
+          <div class="card" style="padding:18px;display:flex;align-items:center;gap:12px">
+            <div class="ring" aria-hidden="true">
+              <div class="inner"></div>
+              <div class="inner two"></div>
+              <div class="inner three"></div>
+            </div>
+            <div style="font-weight:700">Restarting…</div>
+          </div>
+        </div>
+      </div>
+
+      <script>
+      (function(){
+  const welcome = document.getElementById('welcome');
+  const main = document.getElementById('main');
+  const difficultySection = document.getElementById('difficultySection');
+  const game = document.getElementById('game');
+  const result = document.getElementById('result');
+    const howBtn = document.getElementById('howBtn');
+        const maxInput = document.getElementById('maxInput');
+        const beginGame = document.getElementById('beginGame');
+        const cardTitle = document.getElementById('cardTitle');
+        const cardNumbers = document.getElementById('cardNumbers');
+        const yesBtn = document.getElementById('yesBtn');
+        const noBtn = document.getElementById('noBtn');
+        const progress = document.getElementById('progress');
+        const resultNum = document.getElementById('resultNum');
+        const resultMessage = document.getElementById('resultMessage');
+        const again = document.getElementById('again');
+        const newGame = document.getElementById('newGame');
+        const resultCard = document.getElementById('resultCard');
+        const infoModal = document.getElementById('infoModal');
+        const closeInfo = document.getElementById('closeInfo');
+
+    let cards = [];
+        let step = 0;
+        let sum = 0;
+  let answers = []; // record user's answers per shown card: true = yes, false = no
+        let maxVal = 31;
+    const MIN_MAX = 15;
+
+        let welcomeTimer = null;
+        function showSection(el){
+          // hide all sections then reveal the requested one
+          document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+          if(el && el.classList) el.classList.add('active');
+          // toggle 3D welcome panel class
+          const panelEl = document.querySelector('.panel');
+          const wt = document.getElementById('welcomeTrail');
+          if(panelEl){
+            if(el && el.id === 'welcome'){
+              // enable the welcome-only 3D styling
+              panelEl.classList.add('welcome-3d');
+              // ensure the transform resets smoothly when later removed
+              panelEl.style.transition = 'transform .08s linear';
+              if(wt) wt.style.display = 'block';
+            } else {
+              // leaving welcome: remove 3D class and reset any transient transform
+              panelEl.classList.remove('welcome-3d');
+              // add a smooth reset transition so the panel returns to neutral
+              panelEl.style.transition = 'transform .6s cubic-bezier(.2,.9,.2,1)';
+              panelEl.style.transform = 'none';
+              if(wt) wt.style.display = 'none';
+            }
+          }
+        }
+
+        function animateWelcomeExit(toSection){
+          // add exit animation to welcome, then show the next section with a small delay
+          welcome.classList.remove('enter');
+          welcome.classList.add('exit');
+          clearTimeout(welcomeTimer);
+          setTimeout(()=>{
+            welcome.classList.remove('exit');
+            showSection(toSection);
+            // hide bottom loader when moving past welcome
+            const bl = document.getElementById('bottomLoader'); if(bl) bl.classList.add('hidden');
+            // animate the target section entrance if possible
+            if(toSection && toSection.classList) {
+              toSection.classList.add('enter');
+              setTimeout(()=>toSection.classList.remove('enter'),500);
+            }
+          },420);
+        }
+
+        function computeCards(max){
+          const bits = Math.ceil(Math.log2(max+1));
+          const arr = [];
+          for(let bit=0;bit<bits;bit++){
+            const values = [];
+            for(let n=1;n<=max;n++) if(n & (1<<bit)) values.push(n);
+            arr.push({bit,values});
+          }
+          return arr;
+        }
+
+        function render(){
+          const card = cards[step];
+          cardTitle.textContent = `Card ${step+1} of ${cards.length} — bit value ${1<<card.bit}`;
+          cardNumbers.innerHTML = '';
+          card.values.forEach(v=>{const d=document.createElement('div');d.className='num';d.textContent=v;cardNumbers.appendChild(d)});
+          progress.textContent = `${step+1}/${cards.length}`;
+          cardNumbers.parentElement.classList.add('pop');
+          setTimeout(()=>cardNumbers.parentElement.classList.remove('pop'),360);
+        }
+
+        function finish(){
+          if(sum>=1 && sum<=maxVal){
+            showSection(result);
+            resultNum.textContent = sum;
+            resultMessage.textContent = 'Nice! Thanks for playing.';
+            playSuccessAnimation();
+          } else {
+            showSection(result);
+            resultNum.textContent = '—';
+            resultMessage.textContent = 'I could not identify a valid number. Maybe you changed your mind?';
+            playFailureAnimation();
+            // prepare candidate list for investigation
+            prepareCandidates();
+          }
+        }
+
+  function resetGame(){ step=0; sum=0; answers = []; }
+
+
+        function playSuccessAnimation(){
+          const root = resultCard;
+          const pieces = [];
+          for(let i=0;i<18;i++){
+            const p = document.createElement('div'); p.className='confetti-piece';
+            p.style.left = `${20 + Math.random()*60}%`; p.style.background = (Math.random()>0.5)?'var(--accent)':'var(--accent-2)';
+            p.style.transform = `translateY(${20 + Math.random()*40}px) rotate(${Math.random()*360}deg)`;
+            root.appendChild(p); pieces.push(p);
+            setTimeout(()=>p.classList.add('explode'), 20 + i*30 + Math.random()*80);
+          }
+          setTimeout(()=>pieces.forEach(p=>p.remove()), 1200);
+        }
+
+        function playFailureAnimation(){
+          resultCard.classList.add('shake');
+          setTimeout(()=>resultCard.classList.remove('shake'),700);
+        }
+
+  howBtn.addEventListener('click', ()=>{ infoModal.classList.add('open'); infoModal.setAttribute('aria-hidden','false'); closeInfo.focus(); });
+  closeInfo.addEventListener('click', ()=>{ infoModal.classList.remove('open'); infoModal.setAttribute('aria-hidden','true'); howBtn.focus(); });
+
+        // When beginning, first ask parity (odd/even) then start the question flow
+        const parityArea = document.getElementById('parityArea');
+        const oddBtn = document.getElementById('oddBtn');
+        const evenBtn = document.getElementById('evenBtn');
+        const skipParity = document.getElementById('skipParity');
+        let parityKnown = false; // true if user answered
+        let parityIsOdd = false;
+
+  // Wire main/difficulty controls
+  const dialInput = document.getElementById('dialInput');
+  const keypad = document.getElementById('keypad');
+  const clearKey = document.getElementById('clearKey');
+  const backspaceKey = document.getElementById('backspaceKey');
+  const beginBtn = document.getElementById('beginGame');
+    // backToMain button removed from difficulty UI
+
+        beginGame.addEventListener('click', ()=>{
+          // prefer dialInput, fallback to hidden maxInput
+          const raw = (dialInput.value||'').replace(/[^0-9]/g,'');
+          const dialVal = raw === '' ? NaN : parseInt(raw,10);
+          let chosen = Number.isInteger(dialVal) && dialVal>MIN_MAX ? dialVal : parseInt(maxInput.value,10);
+          const dialErrorEl = document.getElementById('dialError'); if(dialErrorEl) dialErrorEl.style.display='none';
+          if(!Number.isInteger(chosen) || chosen<=MIN_MAX){
+            // show inline message and switch theme to danger
+            if(dialErrorEl){ dialErrorEl.style.display='block'; dialErrorEl.textContent = `Please enter a number > ${MIN_MAX}`; }
+            else alert(`Please enter a number > ${MIN_MAX}`);
+            document.documentElement.classList.add('theme-danger');
+            return;
+          }
+          // chosen is valid -> ensure any danger theme is cleared
+          document.documentElement.classList.remove('theme-danger');
+          maxVal = chosen;
+          // store the chosen value in the hidden input for compatibility
+          maxInput.value = String(maxVal);
+          // show the game section and parity prompt
+          showSection(game);
+          const bl = document.getElementById('bottomLoader'); if(bl) bl.classList.add('hidden');
+          parityArea.style.display = 'block';
+          parityArea.classList.add('pop');
+          setTimeout(()=>parityArea.classList.remove('pop'),360);
+          // hide question area until parity answered
+          document.getElementById('questionArea').style.display = 'none';
+        });
+
+        // Keypad handlers (build dialInput as string)
+        if(keypad){
+          keypad.addEventListener('click', (ev)=>{
+            const btn = ev.target.closest('.key');
+            if(!btn) return;
+            // append digit
+            const d = btn.textContent.trim();
+            let cur = dialInput.value || '';
+            if(cur.length >= 6) return; // prevent excessively long numbers
+            dialInput.value = (cur + d).replace(/^0+/, '') || '0';
+            updateBeginState();
+          });
+        }
+        if(clearKey){ clearKey.addEventListener('click', ()=>{ dialInput.value = ''; }); }
+        if(clearKey){ clearKey.addEventListener('click', ()=>{ dialInput.value = ''; updateBeginState(); }); }
+        if(backspaceKey){ backspaceKey.addEventListener('click', ()=>{ dialInput.value = (dialInput.value || '').slice(0,-1); updateBeginState(); }); }
+
+  // enable/disable Begin based on dialInput value (>= MIN_MAX)
+  function updateBeginState(){
+    const raw = (dialInput.value||'').replace(/[^0-9]/g,'');
+    const val = raw === '' ? NaN : parseInt(raw,10);
+    if(Number.isInteger(val) && val>=MIN_MAX){ beginBtn.disabled = false; beginBtn.style.opacity = '1'; beginBtn.style.pointerEvents = 'auto'; }
+    else { beginBtn.disabled = true; beginBtn.style.opacity = '0.45'; beginBtn.style.pointerEvents = 'none'; }
+  }
+  // initialize begin button state
+  updateBeginState();
+
+        // removed preset buttons — dialInput is populated via keypad only
+
+        function startQuestionsWithParity(){
+          console.log('Starting questions with maxVal=', maxVal, 'parityKnown=', parityKnown, 'parityIsOdd=', parityIsOdd);
+          // compute cards after parity decision
+          cards = computeCards(maxVal);
+          resetGame();
+          // if parity known and bit 0 exists, auto-apply and skip the LSB card
+          if(parityKnown && cards.length>0){
+            const lsbBit = cards[0].bit; // should be 0
+            if(lsbBit === 0){
+              if(parityIsOdd){ sum += (1<<0); }
+              // skip the LSB card by incrementing step
+              step = 1;
+            }
+          }
+          // show question area and render current card
+          parityArea.style.display = 'none';
+          const q = document.getElementById('questionArea'); q.style.display = 'block';
+          render();
+        }
+
+        oddBtn.addEventListener('click', ()=>{ parityKnown = true; parityIsOdd = true; startQuestionsWithParity(); });
+        evenBtn.addEventListener('click', ()=>{ parityKnown = true; parityIsOdd = false; startQuestionsWithParity(); });
+        skipParity.addEventListener('click', ()=>{ parityKnown = false; startQuestionsWithParity(); });
+
+        yesBtn.addEventListener('click', ()=>{
+          // record answer
+          answers[step] = true;
+          sum += (1<<cards[step].bit);
+          step++;
+          if(step<cards.length) render(); else finish();
+        });
+
+        noBtn.addEventListener('click', ()=>{
+          answers[step] = false;
+          step++;
+          if(step<cards.length) render(); else finish();
+        });
+
+        function startNewSession(){
+          // clear state
+          resetGame();
+          answers = [];
+          sum = 0; step = 0;
+          // clear inputs
+          if(dialInput) dialInput.value = '';
+          if(maxInput) maxInput.value = '31';
+          // hide in-game panels
+          parityArea.style.display = 'none';
+          const qArea = document.getElementById('questionArea'); if(qArea) qArea.style.display = 'none';
+          // hide overlays
+          const explainSec = document.getElementById('explain'); if(explainSec) explainSec.classList.remove('active');
+          const invSec = document.getElementById('investigate'); if(invSec) invSec.classList.remove('active');
+          const invFull = document.getElementById('investigateDetailFull'); if(invFull){ invFull.style.display='none'; invFull.setAttribute('aria-hidden','true'); }
+          // show difficulty so user can pick max and begin
+          showSection(difficultySection);
+          // show bottom loader again briefly for visual continuity
+          const bl = document.getElementById('bottomLoader'); if(bl) bl.classList.remove('hidden'); setTimeout(()=>{ if(bl) bl.classList.add('hidden'); },800);
+        }
+
+        again.addEventListener('click', ()=>{ startNewSession(); });
+        newGame.addEventListener('click', ()=>{ startNewSession(); });
+        const wrongBtn = document.getElementById('wrongBtn');
+        const explainSection = document.getElementById('explain');
+        const candidateList = document.getElementById('candidateList');
+        const candidateExplain = document.getElementById('candidateExplain');
+        const explainTitle = document.getElementById('explainTitle');
+        const explainBody = document.getElementById('explainBody');
+        const backToResult = document.getElementById('backToResult');
+        const restartFromExplain = document.getElementById('restartFromExplain');
+  const investigateBtn = document.getElementById('investigateBtn');
+  const investigateSection = document.getElementById('investigate');
+  const investigateList = document.getElementById('investigateList');
+  const investigateDetail = document.getElementById('investigateDetail');
+  const investigateTitle = document.getElementById('investigateTitle');
+  const investigateBody = document.getElementById('investigateBody');
+  const backToExplain = document.getElementById('backToExplain');
+  const restartFromInvestigate = document.getElementById('restartFromInvestigate');
+
+        wrongBtn.addEventListener('click', ()=>{
+          // show explain section
+          showSection(explainSection);
+        });
+
+  backToResult.addEventListener('click', ()=>{ showSection(result); });
+  restartFromExplain.addEventListener('click', ()=>{ startNewSession(); });
+
+        function prepareCandidates(){
+          // compute all numbers from 1..maxVal that match the user's answers on the cards we asked
+          candidateList.innerHTML = '';
+          candidateExplain.style.display = 'none';
+          const exact = [];
+          const parityFlip = [];
+          for(let n=1;n<=maxVal;n++){
+            let ok = true;
+            for(let i=0;i<cards.length;i++){
+              const bit = cards[i].bit;
+              const hasBit = !!(n & (1<<bit));
+              // if we have a recorded answer for this card, compare
+              if(typeof answers[i] !== 'undefined'){
+                if(answers[i] !== hasBit){ ok = false; break; }
+              } else if(parityKnown && bit===0){
+                // if parity was answered, use it for the LSB
+                if(parityIsOdd !== hasBit){ ok = false; break; }
+              }
+            }
+            if(ok) exact.push(n);
+            // also compute parity-flip matches if parity was answered: assume parity was misunderstood
+            if(parityKnown){
+              let okFlip = true;
+              for(let i=0;i<cards.length;i++){
+                const bit = cards[i].bit;
+                const hasBit = !!(n & (1<<bit));
+                if(typeof answers[i] !== 'undefined'){
+                  if(answers[i] !== hasBit){ okFlip = false; break; }
+                } else if(bit===0){
+                  // assume opposite parity
+                  if((!parityIsOdd) !== hasBit){ okFlip = false; break; }
+                }
+              }
+              if(okFlip) parityFlip.push(n);
+            }
+          }
+
+          function renderGroup(title, arr, parityFlag){
+            if(arr.length===0) return;
+            const hdr = document.createElement('div'); hdr.className='muted'; hdr.style.marginTop='8px'; hdr.textContent = title; candidateList.appendChild(hdr);
+            const shown = arr.slice(0,48);
+            shown.forEach(n=>{
+              const b = document.createElement('button'); b.className='btn ghost'; b.textContent = n;
+              b.addEventListener('click', ()=>{ explainCandidate(n, {parityFlip: !!parityFlag}); });
+              b.addEventListener('click', ()=>{ /* keep for compatibility */ });
+              b.addEventListener('click', ()=>{ /* noop */ });
+              b.addEventListener('click', ()=>{});
+              candidateList.appendChild(b);
+            });
+            if(arr.length>shown.length){ const more = document.createElement('div'); more.className='muted'; more.textContent = `...and ${arr.length-shown.length} more`; candidateList.appendChild(more); }
+          }
+
+          renderGroup('Matches (based on your answers)', exact, false);
+          if(parityKnown) renderGroup('Matches if parity was reversed', parityFlip, true);
+          if(exact.length===0 && parityFlip.length===0){ candidateList.innerHTML = '<div class="muted">No matching candidates found.</div>'; }
+        }
+
+        function explainCandidate(n, opts){
+          opts = opts || {};
+          const parityFlip = !!opts.parityFlip;
+          // find which asked question differs between predicted sum and this candidate
+          candidateExplain.style.display = 'block';
+          explainTitle.textContent = `Candidate: ${n}` + (parityFlip? ' (parity reversed)' : '');
+          // build explanation: list each asked card and whether candidate would answer yes/no and whether the user's answer matched
+          const parts = [];
+          for(let i=0;i<cards.length;i++){
+            const bit = cards[i].bit;
+            // determine user's answer for this bit: prefer recorded answer, else use parity if bit=0
+            let userAnsDefined = (typeof answers[i] !== 'undefined');
+            let userAns;
+            if(userAnsDefined) userAns = answers[i];
+            else if(parityKnown && bit===0) userAns = parityFlip ? !parityIsOdd : parityIsOdd;
+            else continue; // skip cards we didn't ask and no parity info
+            const candidateHas = !!(n & (1<<bit));
+            const question = `Card ${i+1} (bit ${1<<bit})`;
+            const status = candidateHas === userAns ? 'matches' : 'differs';
+            parts.push(`<div><strong>${question}:</strong> candidate would answer <em>${candidateHas? 'Yes':'No'}</em>; your answer <em>${userAns? 'Yes':'No'}</em> — <strong>${status}</strong></div>`);
+          }
+          explainBody.innerHTML = parts.join('');
+        }
+
+        // Investigation: compute ranked candidates by Hamming distance (differences) and render
+        investigateBtn.addEventListener('click', ()=>{
+          // compute distances for 1..maxVal
+          const list = [];
+          for(let n=1;n<=maxVal;n++){
+            let diffs = 0;
+            for(let i=0;i<cards.length;i++){
+              if(typeof answers[i] === 'undefined') continue;
+              const bit = cards[i].bit;
+              const candHas = !!(n & (1<<bit));
+              if(candHas !== answers[i]) diffs++;
+            }
+            list.push({n,diffs});
+          }
+          list.sort((a,b)=>a.diffs - b.diffs || a.n - b.n);
+          // render top 100 (or all if small)
+          investigateList.innerHTML = '';
+          const top = list.slice(0,200);
+          top.forEach(item=>{
+            // show number only on the button; details appear in the full detail view
+            const b = document.createElement('button'); b.className='btn'; b.textContent = `${item.n}`;
+            b.addEventListener('click', ()=>{ openInvestigateDetailFull(item.n); });
+            investigateList.appendChild(b);
+          });
+          showSection(investigateSection);
+        });
+
+        function showInvestigateDetail(n){
+          investigateDetail.style.display = 'block';
+          investigateTitle.textContent = `Candidate ${n}`;
+          const parts = [];
+          for(let i=0;i<cards.length;i++){
+            if(typeof answers[i] === 'undefined') continue;
+            const bit = cards[i].bit;
+            const candHas = !!(n & (1<<bit));
+            const userAns = answers[i] ? true : false;
+            const question = `Card ${i+1} (bit ${1<<bit})`;
+            const status = candHas === userAns ? 'matches' : 'differs';
+            parts.push(`<div><strong>${question}:</strong> candidate would answer <em>${candHas? 'Yes':'No'}</em>; your answer <em>${userAns? 'Yes':'No'}</em> — <strong>${status}</strong></div>`);
+          }
+          investigateBody.innerHTML = parts.join('');
+        }
+
+        // Open full-window detail with animation
+        const investigateDetailFull = document.getElementById('investigateDetailFull');
+        const investigateFullTitle = document.getElementById('investigateFullTitle');
+        const investigateFullBody = document.getElementById('investigateFullBody');
+        const closeInvestigateFull = document.getElementById('closeInvestigateFull');
+        const investigateBackToList = document.getElementById('investigateBackToList');
+        const investigateRestart = document.getElementById('investigateRestart');
+
+        function openInvestigateDetailFull(n, opts){
+          opts = opts || {};
+          const parityFlip = !!opts.parityFlip;
+          // populate full detail, similar to showInvestigateDetail but fuller text
+          investigateFullTitle.textContent = `Candidate ${n}`;
+          // Build a rich snapshot of the asked cards, preserving the game look
+          const parts = [];
+          parts.push(`<div style="font-weight:700;margin-bottom:8px">Candidate number: ${n} — Max: ${maxVal}</div>`);
+          parts.push(`<div class="muted">Brief: If you couldn't clearly see a card, it's easy to mis-click. Below are the cards shown during the game; any highlighted items indicate where the candidate differs from your recorded answer.</div>`);
+          parts.push('<div class="snapshot">');
+          for(let i=0;i<cards.length;i++){
+            const bit = cards[i].bit;
+            // determine user's answer: recorded or parity
+            let userAnsDefined = (typeof answers[i] !== 'undefined');
+            let userAns;
+            if(userAnsDefined) userAns = answers[i] ? true : false;
+            else if(parityKnown && bit===0) userAns = parityFlip ? !parityIsOdd : parityIsOdd;
+            else continue;
+            const candHas = !!(n & (1<<bit));
+            const questionLabel = `Card ${i+1} — bit ${1<<bit}`;
+            // mark mismatch or match
+            const isDiff = candHas !== userAns;
+            const isMatch = !isDiff;
+            parts.push(`<div class="card ${isDiff? 'mismatch': (isMatch? 'match':'')}">`);
+            parts.push(`<div class="cardTitle">${questionLabel}</div>`);
+            parts.push('<div class="nums">');
+            // show numbers in this card — highlight numbers that would be selected by candidate
+            cards[i].values.forEach(v=>{
+              const selectedByCandidate = !!(v & n);
+              const numClass = selectedByCandidate ? 'num selected' : 'num';
+              parts.push(`<div class="${numClass}">${v}</div>`);
+            });
+            // compute card parity (majority even or odd) to help user see why they might have misread it
+            const evens = cards[i].values.filter(x=> x%2===0).length;
+            const odds = cards[i].values.length - evens;
+            const cardParity = evens>odds ? 'even' : (odds>evens ? 'odd' : 'mixed');
+            if(parityKnown && cardParity!=='mixed'){
+              const userParityLabel = (parityFlip ? (!parityIsOdd) : parityIsOdd) ? 'odd' : 'even';
+              if(userParityLabel !== cardParity){
+                parts.push(`<div class="muted" style="margin-top:8px">Note: this card contains mostly <strong>${cardParity}</strong> numbers, but you selected <strong>${userParityLabel}</strong>.</div>`);
+              }
+            }
+            parts.push('</div>');
+            // show comparison badge
+            parts.push('<div style="margin-top:8px">');
+            parts.push(`<span class="badge ${userAns? 'yes':'no'}">Your answer: ${userAns? 'Yes':'No'}</span>`);
+            if(isDiff) parts.push(`<span class="badge wrong">Mismatch</span>`);
+            parts.push('</div>');
+            parts.push('</div>');
+          }
+          parts.push('</div>');
+          parts.push('<div style="margin-top:12px;color:var(--muted)">Tip: numbers highlighted are where the candidate expects a different response. If you spot a mismatch, try Play again and correct that card.</div>');
+          investigateFullBody.innerHTML = parts.join('');
+
+          // show full detail as overlay
+          showSection(investigateDetailFull);
+          investigateDetailFull.style.display = 'flex';
+          investigateDetailFull.setAttribute('aria-hidden','false');
+          // add entrance animation
+          investigateDetailFull.classList.add('enter');
+          setTimeout(()=>investigateDetailFull.classList.remove('enter'),500);
+        }
+
+        closeInvestigateFull.addEventListener('click', ()=>{
+          investigateDetailFull.classList.add('exit');
+          setTimeout(()=>{ investigateDetailFull.style.display='none'; investigateDetailFull.classList.remove('exit'); investigateDetailFull.setAttribute('aria-hidden','true'); showSection(investigateSection); },420);
+        });
+        investigateBackToList.addEventListener('click', ()=>{ investigateDetailFull.style.display='none'; showSection(investigateSection); });
+        investigateRestart.addEventListener('click', ()=>{ 
+          const cl = document.getElementById('centerLoader'); if(cl){ cl.style.display='flex'; setTimeout(()=>{ cl.style.display='none'; startNewSession(); },800); } else startNewSession();
+        });
+
+        backToExplain.addEventListener('click', ()=>{ showSection(explainSection); });
+        restartFromInvestigate.addEventListener('click', ()=>{ 
+          const cl = document.getElementById('centerLoader'); if(cl){ cl.style.display='flex'; setTimeout(()=>{ cl.style.display='none'; startNewSession(); },800); } else startNewSession();
+        });
+
+  // initialize with default max but don't render cards until the game starts
+  // cards will be computed when the user begins (startQuestionsWithParity())
+        // show welcome enter animation
+        welcome.classList.add('enter');
+  // auto dismiss welcome after 4 seconds -> forward to main landing
+  welcomeTimer = setTimeout(()=>{ animateWelcomeExit(difficultySection); }, 4000);
+
+        // pause auto-dismiss while interacting with the welcome area, resume on leave
+        const welcomeArea = document.querySelector('#welcome .welcome');
+        welcomeArea.addEventListener('mouseenter', ()=>{ clearTimeout(welcomeTimer); });
+        welcomeArea.addEventListener('focusin', ()=>{ clearTimeout(welcomeTimer); });
+  welcomeArea.addEventListener('mouseleave', ()=>{ clearTimeout(welcomeTimer); welcomeTimer = setTimeout(()=>{ animateWelcomeExit(difficultySection); }, 2400); });
+  welcomeArea.addEventListener('focusout', ()=>{ clearTimeout(welcomeTimer); welcomeTimer = setTimeout(()=>{ animateWelcomeExit(difficultySection); }, 2400); });
+        // --- welcome 3D tilt + fire trail ---
+        (function(){
+          const canvas = document.getElementById('welcomeTrail');
+          if(!canvas) return;
+          const ctx = canvas.getContext('2d');
+          let w=0,h=0,particles=[];
+          function resize(){ w = canvas.width = window.innerWidth; h = canvas.height = window.innerHeight; }
+          window.addEventListener('resize', resize); resize();
+
+          function spawn(x,y){
+            // only spawn when welcome section is active
+            const welcomeActive = document.querySelector('#welcome').classList.contains('active');
+            if(!welcomeActive) return;
+            for(let i=0;i<3;i++){
+              particles.push({x:x + (Math.random()-0.5)*8, y:y + (Math.random()-0.5)*8, vx:(Math.random()-0.5)*2,vy:-Math.random()*1.6-0.6, life: 28 + Math.random()*18, age:0, r:6+Math.random()*8, hue: 28 + Math.random()*24});
+            }
+          }
+
+          function tick(){
+            ctx.clearRect(0,0,w,h);
+            for(let i=particles.length-1;i>=0;i--){
+              const p = particles[i];
+              p.x += p.vx; p.y += p.vy; p.vy += 0.06; p.age++;
+              const t = p.age / p.life; if(t>1){ particles.splice(i,1); continue; }
+              const alpha = (1 - t) * 0.9;
+              const grad = ctx.createRadialGradient(p.x,p.y,0,p.x,p.y,p.r);
+              grad.addColorStop(0, `hsla(${p.hue},100%,60%,${alpha})`);
+              grad.addColorStop(0.5, `hsla(${p.hue+10},95%,50%,${alpha*0.55})`);
+              grad.addColorStop(1, `rgba(0,0,0,0)`);
+              ctx.fillStyle = grad; ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,Math.PI*2); ctx.fill();
+            }
+            requestAnimationFrame(tick);
+          }
+          tick();
+
+          // panel tilt based on mouse position; spawn particles across the full viewport
+          const panelEl = document.querySelector('.panel');
+          function onMove(e){
+            const x = e.clientX; const y = e.clientY;
+            spawn(x, y);
+            // only tilt the panel while the welcome section is active
+            const welcomeActive = document.querySelector('#welcome').classList.contains('active');
+            if(!welcomeActive) return;
+            const rect = welcomeArea.getBoundingClientRect();
+            const cx = rect.width/2 + rect.left; const cy = rect.height/2 + rect.top;
+            const rx = (y - cy) / (cy - rect.top); const ry = (x - cx) / (cx - rect.left);
+            if(panelEl) panelEl.style.transform = `rotateX(${rx*6}deg) rotateY(${ry*8}deg)`;
+          }
+          // attach to window so the trail covers the viewport; spawning gated by active welcome
+          window.addEventListener('mousemove', onMove);
+          // still use welcomeArea enter/leave to tweak panel transitions
+          welcomeArea.addEventListener('mouseenter', ()=>{ if(panelEl) panelEl.style.transition='transform .08s linear'; });
+          welcomeArea.addEventListener('mouseleave', ()=>{ if(panelEl){ panelEl.style.transition='transform .6s cubic-bezier(.2,.9,.2,1)'; panelEl.style.transform='none'; } });
+        })();
+      })();
+    </script>
+  </body>
+</html>
