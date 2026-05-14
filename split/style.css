@@ -1,4 +1,4 @@
-﻿/* ===== THEMES ===== */
+/* ===== THEMES ===== */
       :root,[data-theme=cyber]{--bg:#071426;--bg2:#041021;--card:#0f1724;--border:rgba(255,255,255,0.06);--accent:#06b6d4;--accent-2:#7c3aed;--ar:6,182,212;--a2r:124,58,237;--muted:#9ca3af;--success:#10b981;--danger:#ef4444;--btn-g:linear-gradient(135deg,#06b6d4,#7c3aed);--text:#e6eef8}
       [data-theme=inferno]{--bg:#150505;--bg2:#0d0202;--card:#1f0808;--border:rgba(255,120,0,0.08);--accent:#f97316;--accent-2:#ef4444;--ar:249,115,22;--a2r:239,68,68;--muted:#a07060;--success:#10b981;--danger:#ef4444;--btn-g:linear-gradient(135deg,#f97316,#ef4444);--text:#fef3e2}
       [data-theme=forest]{--bg:#051205;--bg2:#031003;--card:#091509;--border:rgba(34,197,94,0.08);--accent:#22c55e;--accent-2:#059669;--ar:34,197,94;--a2r:5,150,105;--muted:#6b9e7a;--success:#10b981;--danger:#ef4444;--btn-g:linear-gradient(135deg,#22c55e,#059669);--text:#dcfce7}
@@ -270,8 +270,8 @@
       #keypad .btn{padding:12px;font-size:1.05rem;border-radius:10px}
       .preset{width:100%;text-align:center}
   /* Investigate full-screen overlay */
-  #investigateDetailFull{background:rgba(4,6,12,0.6);position:fixed;inset:0;z-index:80;display:none;align-items:center;justify-content:center}
-  #investigateDetailFull .card{max-height:86vh;overflow:auto}
+  #investigateDetailFull{background:var(--bg);position:fixed;inset:0;z-index:80;display:none;align-items:stretch;justify-content:center;overflow:auto}
+  #investigateDetailFull .card{width:100%;max-width:100vw;min-height:100vh;border-radius:0;border:none;box-shadow:none;margin:0;padding:24px 16px;}
   #investigateDetailFull.enter{animation:modalIn .32s ease both}
   #investigateDetailFull.exit{animation:welcomeOut .36s ease both}
   /* Candidate buttons simplified */
