@@ -1,0 +1,308 @@
+﻿/* ===== THEMES ===== */
+      :root,[data-theme=cyber]{--bg:#071426;--bg2:#041021;--card:#0f1724;--border:rgba(255,255,255,0.06);--accent:#06b6d4;--accent-2:#7c3aed;--ar:6,182,212;--a2r:124,58,237;--muted:#9ca3af;--success:#10b981;--danger:#ef4444;--btn-g:linear-gradient(135deg,#06b6d4,#7c3aed);--text:#e6eef8}
+      [data-theme=inferno]{--bg:#150505;--bg2:#0d0202;--card:#1f0808;--border:rgba(255,120,0,0.08);--accent:#f97316;--accent-2:#ef4444;--ar:249,115,22;--a2r:239,68,68;--muted:#a07060;--success:#10b981;--danger:#ef4444;--btn-g:linear-gradient(135deg,#f97316,#ef4444);--text:#fef3e2}
+      [data-theme=forest]{--bg:#051205;--bg2:#031003;--card:#091509;--border:rgba(34,197,94,0.08);--accent:#22c55e;--accent-2:#059669;--ar:34,197,94;--a2r:5,150,105;--muted:#6b9e7a;--success:#10b981;--danger:#ef4444;--btn-g:linear-gradient(135deg,#22c55e,#059669);--text:#dcfce7}
+      [data-theme=royal]{--bg:#0d0516;--bg2:#080310;--card:#150a22;--border:rgba(168,85,247,0.08);--accent:#a855f7;--accent-2:#7c3aed;--ar:168,85,247;--a2r:124,58,237;--muted:#9070b0;--success:#10b981;--danger:#ef4444;--btn-g:linear-gradient(135deg,#a855f7,#7c3aed);--text:#f3e8ff}
+      [data-theme=rose]{--bg:#160610;--bg2:#100408;--card:#1f0b17;--border:rgba(244,63,94,0.08);--accent:#f43f5e;--accent-2:#fb923c;--ar:244,63,94;--a2r:251,146,60;--muted:#a0708a;--success:#10b981;--danger:#ef4444;--btn-g:linear-gradient(135deg,#f43f5e,#fb923c);--text:#fff1f3}
+      [data-theme=ocean]{--bg:#021525;--bg2:#011020;--card:#041e35;--border:rgba(14,165,233,0.08);--accent:#0ea5e9;--accent-2:#06b6d4;--ar:14,165,233;--a2r:6,182,212;--muted:#6090b0;--success:#10b981;--danger:#ef4444;--btn-g:linear-gradient(135deg,#0ea5e9,#06b6d4);--text:#e0f2fe}
+      /* danger override */
+      html.theme-danger{--accent:#ff4d4d;--accent-2:#ff7a5a}
+      /* ===== TRANSITION ALL on theme change ===== */
+      body,html{transition:background .4s,color .4s}
+      .panel,.card,.btn{transition:background .35s,border-color .35s,box-shadow .35s,color .25s}
+      /* ===== ANIMATED BG ORBS ===== */
+      .bg-orbs{position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden}
+      .orb{position:absolute;border-radius:50%;filter:blur(90px);opacity:.13;animation:orbFloat 9s ease-in-out infinite}
+      .orb1{width:380px;height:380px;background:var(--accent);top:-80px;left:-80px;animation-delay:0s}
+      .orb2{width:280px;height:280px;background:var(--accent-2);bottom:-60px;right:-60px;animation-delay:-4s}
+      .orb3{width:180px;height:180px;background:var(--accent);top:55%;left:65%;animation-delay:-7s;animation-duration:12s}
+      @keyframes orbFloat{0%,100%{transform:translate(0,0) scale(1)}33%{transform:translate(18px,-14px) scale(1.06)}66%{transform:translate(-10px,18px) scale(.97)}}
+      /* ===== THEME SWITCHER ===== */
+      #themeSwitcher{position:fixed;top:16px;right:16px;z-index:200;display:flex;flex-direction:column;align-items:flex-end;gap:8px}
+      #themeToggleBtn{width:42px;height:42px;border-radius:50%;background:var(--card);border:1px solid var(--border);cursor:pointer;font-size:1.2rem;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 20px rgba(0,0,0,0.4);transition:transform .2s,box-shadow .2s;color:var(--text)}
+      #themeToggleBtn:hover{transform:scale(1.1) rotate(20deg);box-shadow:0 8px 30px rgba(0,0,0,0.5)}
+      #themePalette{display:none;flex-direction:column;gap:6px;align-items:flex-end;animation:fadeSlideIn .2s ease both}
+      #themePalette.open{display:flex}
+      @keyframes fadeSlideIn{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:none}}
+      .theme-dot{width:32px;height:32px;border-radius:50%;cursor:pointer;border:2px solid transparent;box-shadow:0 2px 10px rgba(0,0,0,0.4);transition:transform .18s,border-color .18s,box-shadow .18s;position:relative}
+      .theme-dot:hover,.theme-dot.active{transform:scale(1.22);border-color:#fff;box-shadow:0 4px 18px rgba(255,255,255,0.25)}
+      .theme-dot[data-t=cyber]{background:linear-gradient(135deg,#06b6d4,#7c3aed)}
+      .theme-dot[data-t=inferno]{background:linear-gradient(135deg,#f97316,#ef4444)}
+      .theme-dot[data-t=forest]{background:linear-gradient(135deg,#22c55e,#059669)}
+      .theme-dot[data-t=royal]{background:linear-gradient(135deg,#a855f7,#7c3aed)}
+      .theme-dot[data-t=rose]{background:linear-gradient(135deg,#f43f5e,#fb923c)}
+      .theme-dot[data-t=ocean]{background:linear-gradient(135deg,#0ea5e9,#06b6d4)}
+      .theme-dot-label{position:absolute;right:40px;top:50%;transform:translateY(-50%);background:var(--card);padding:3px 8px;border-radius:6px;font-size:.75rem;white-space:nowrap;color:var(--text);border:1px solid var(--border);opacity:0;pointer-events:none;transition:opacity .15s}
+      .theme-dot:hover .theme-dot-label{opacity:1}
+      /* ===== PARITY BADGE ===== */
+      #parityBadge{display:none;align-items:center;gap:6px;padding:5px 10px;border-radius:99px;background:rgba(var(--ar),0.12);border:1px solid rgba(var(--ar),0.2);color:var(--accent);font-size:.82rem;font-weight:700;animation:badgePop .3s ease both}
+      @keyframes badgePop{from{transform:scale(.85);opacity:0}to{transform:scale(1);opacity:1}}
+      /* ===== HISTORY DOTS ===== */
+      #historyRow{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:8px;min-height:18px}
+      .hdot{width:14px;height:14px;border-radius:50%;border:2px solid var(--border);background:var(--card);transition:background .2s,border-color .2s;position:relative}
+      .hdot.yes{background:var(--accent);border-color:var(--accent)}
+      .hdot.no{background:var(--card);border-color:var(--muted)}
+      .hdot.current{border-color:var(--accent);animation:pulse 1s infinite}
+      @keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(var(--ar),.4)}50%{box-shadow:0 0 0 5px rgba(var(--ar),0)}}
+      /* ===== PROGRESS BAR ===== */
+      #progressBar{height:4px;background:rgba(255,255,255,0.06);border-radius:99px;overflow:hidden;margin:8px 0 12px}
+      #progressFill{height:100%;background:var(--btn-g);border-radius:99px;transition:width .4s cubic-bezier(.4,0,.2,1);width:0%}
+      /* ===== RIPPLE ===== */
+      .ripple{position:absolute;border-radius:50%;background:rgba(255,255,255,0.15);transform:scale(0);animation:rippleAnim .4s ease-out forwards;pointer-events:none;z-index:10}
+      @keyframes rippleAnim{to{transform:scale(3);opacity:0}}
+      /* ===== NUM TILE HOVER ===== */
+      .num{cursor:default;transition:background .18s,transform .18s,box-shadow .18s}
+      .num:hover{background:rgba(var(--ar),.12);transform:translateY(-2px) scale(1.05);box-shadow:0 4px 12px rgba(var(--ar),.15)}
+      /* danger theme */
+      html.theme-danger .btn{background:linear-gradient(90deg,var(--accent),var(--accent-2));}
+      html.theme-danger .btn::before{background:radial-gradient(closest-side,rgba(255,77,77,.18),rgba(255,77,77,.06) 45%,transparent 60%)}
+      /* ===== KEEP remaining original danger text ===== */
+      /* danger theme toggled when user enters below minimum */
+  .theme-danger{--accent:#ff4d4d;--accent-2:#ff7a5a}
+  /* ensure primary buttons reflect danger accent when theme is active */
+  .theme-danger .btn{background:linear-gradient(90deg,var(--accent),var(--accent-2));}
+  .theme-danger .btn::before{background:radial-gradient(closest-side, rgba(255,77,77,0.18), rgba(255,77,77,0.06) 45%, transparent 60%)}
+      *{box-sizing:border-box}
+      html,body{height:100%}
+      body{margin:0;font-family:'Inter',system-ui,Segoe UI,Roboto,Arial;background:linear-gradient(180deg,var(--bg),var(--bg2,#041021));color:var(--text,#e6eef8);display:flex;align-items:flex-start;justify-content:center;padding:24px 16px 80px;min-height:100vh}
+      .wrap{width:100%;max-width:980px}
+      .panel{background:linear-gradient(180deg,rgba(255,255,255,0.02),transparent);padding:24px;border-radius:14px;border:1px solid rgba(255,255,255,0.04);box-shadow:0 10px 30px rgba(2,6,23,0.6)}
+      h1{margin:0 0 8px;font-size:1.6rem}
+      p.lead{color:var(--muted);margin:0 0 14px}
+
+      /* Sections */
+      .section{display:none}
+      .section.active{display:block}
+
+      /* Welcome */
+      .welcome{display:flex;flex-direction:column;align-items:center;gap:12px}
+  .logo{width:84px;height:84px;border-radius:12px;background:linear-gradient(135deg,var(--accent),var(--accent-2));display:flex;align-items:center;justify-content:center;font-weight:800;color:#041026;font-size:1.6rem}
+  /* floating logo */
+  .logo{animation:logoFloat 3.6s ease-in-out infinite;transform-origin:center;backface-visibility:hidden}
+  /* 3D tilt and shine on hover (no rotate to avoid 'waving' effect) */
+  .logo:hover{transform:translateY(-6px) scale(1.02);box-shadow:0 18px 40px rgba(2,6,23,0.5)}
+  @keyframes logoFloat{0%{transform:translateY(0)}50%{transform:translateY(-6px)}100%{transform:translateY(0)}}
+  /* primary button gradient: warm red-orange -> cool blue-cyan */
+  /* enable a soft blurred glow behind buttons using a ::before pseudo-element
+    - position:relative so the pseudo-element can be absolutely positioned
+    - z-index on pseudo-element is negative so it sits behind the button
+    - ghost buttons use a lower-intensity glow */
+  /* default: blue primary button (cool) */
+  .btn{background:var(--btn-g,linear-gradient(135deg,#06b6d4,#7c3aed));color:#fff;border:0;padding:10px 14px;border-radius:10px;cursor:pointer;font-weight:700;transition:transform .18s ease,box-shadow .18s ease,background .4s;position:relative;overflow:hidden;z-index:1}
+  .btn::before{content:'';position:absolute;left:50%;top:50%;transform:translate(-50%,-50%) scale(.92);width:160%;height:160%;border-radius:14px;pointer-events:none;z-index:-1;opacity:0;filter:blur(14px);transition:opacity .22s cubic-bezier(.2,.9,.2,1),transform .22s cubic-bezier(.2,.9,.2,1),background .22s}
+  .btn:hover::before,.btn:focus::before{opacity:1;transform:translate(-50%,-50%) scale(1)}
+  /* default glow: cool blue halo */
+  .btn::before{background:radial-gradient(closest-side, rgba(14,165,255,0.22), rgba(3,105,161,0.08) 45%, transparent 60%)}
+  /* ghost buttons keep a much subtler cool glow */
+  .btn.ghost::before{background:radial-gradient(closest-side, rgba(255,255,255,0.04), rgba(124,58,237,0.04) 45%, transparent 70%);filter:blur(8px)}
+  /* keyboard focus visible via glow */
+  .btn:focus-visible::before{opacity:1;transform:translate(-50%,-50%) scale(1.02);filter:blur(12px)}
+  .btn.ghost{background:transparent;border:1px solid rgba(255,255,255,0.06);color:var(--muted)}
+  /* Parity buttons (odd/even/skip) - harmonized variants */
+  /* parity buttons inherit base style (blue) but remain distinct if needed */
+  #oddBtn,#evenBtn,#skipParity{background:var(--btn-g,linear-gradient(135deg,#06b6d4,#7c3aed));color:#fff;border:none;box-shadow:0 8px 28px rgba(var(--ar,6,182,212),0.12)}
+  /* hover/focus micro-interactions: transform + switch to orange 'fire' gradient */
+  #oddBtn:hover,#evenBtn:hover,#skipParity:hover{transform:translateY(-6px) scale(1.03);transition:transform .18s, box-shadow .2s, background .22s}
+  #oddBtn:hover,#evenBtn:hover,#skipParity:hover{background:linear-gradient(90deg,#ff6b3d,#ff9a4d);color:#220;box-shadow:0 18px 48px rgba(255,110,60,0.22)}
+  #oddBtn:focus,#evenBtn:focus,#skipParity:focus{outline:3px solid rgba(255,255,255,0.06);box-shadow:0 12px 36px rgba(0,0,0,0.32)}
+  /* removed small accent pseudo-elements on parity buttons for a cleaner look */
+  /* button hover/active */
+  .btn:hover{transform:translateY(-4px) scale(1.03);box-shadow:0 10px 30px rgba(255,110,60,0.10)}
+  .btn:active{transform:translateY(-1px) scale(.99)}
+  .btn.ghost:hover{transform:translateY(-3px) scale(1.02);box-shadow:0 8px 22px rgba(124,58,237,0.08)}
+  /* disabled button visuals used for Begin when input is invalid */
+  .btn[disabled]{opacity:.45;pointer-events:none}
+
+  /* welcome enter/exit animations */
+  .welcome.enter{animation:welcomeIn .6s ease both}
+  .welcome.exit{animation:welcomeOut .45s ease both}
+  @keyframes welcomeIn{0%{transform:translateY(8px) scale(.98);opacity:0}100%{transform:none;opacity:1}}
+  @keyframes welcomeOut{0%{transform:none;opacity:1}100%{transform:translateY(-18px) scale(.96);opacity:0}}
+
+  /* gentle 3D panel tilt when on welcome to add depth */
+  .panel.welcome-3d{transform-style:preserve-3d;transition:transform .7s cubic-bezier(.2,.9,.2,1);}
+  .section#welcome .panel.welcome-3d{transform:rotateX(2deg) translateY(-6px)}
+
+  /* 3D layered restart spinner (centerLoader) */
+  #centerLoader .ring{width:48px;height:48px;border-radius:50%;position:relative}
+  #centerLoader .ring .inner{position:absolute;inset:0;border-radius:50%;border:4px solid rgba(255,255,255,0.06);border-top-color:rgba(255,107,61,0.95);animation:spin 1s linear infinite}
+  #centerLoader .ring .inner.two{border-top-color:var(--accent);border-width:3px;animation-duration:1.4s}
+  #centerLoader .ring .inner.three{border-top-color:rgba(124,58,237,0.9);border-width:2px;animation-duration:1.8s}
+
+  /* result buttons animation - make all three animate and share the palette */
+  /* ===== RESULT & EXPLAIN BUTTONS — theme-aware shimmer ===== */
+  /* shimmer sweep using a wide background that scrolls */
+  @keyframes btnShimmer{0%{background-position:200% center}100%{background-position:-200% center}}
+  #result button,#result .btn,
+  #result #again,#result #wrongBtn,#result #newGame{
+    background:linear-gradient(90deg,var(--accent),var(--accent-2),var(--accent));
+    background-size:200% auto;
+    animation:btnShimmer 3s linear infinite;
+    color:#fff;
+    font-weight:800;
+    border:none;
+    padding:10px 16px;
+    border-radius:10px;
+    box-shadow:0 6px 24px rgba(var(--ar),0.25);
+    overflow:hidden;
+  }
+  #result button:hover,#result .btn:hover,
+  #result #again:hover,#result #wrongBtn:hover,#result #newGame:hover{
+    transform:translateY(-5px) scale(1.04);
+    box-shadow:0 14px 40px rgba(var(--ar),0.4);
+  }
+  #result button:focus-visible,#result .btn:focus-visible{
+    outline:3px solid rgba(var(--ar),0.5);outline-offset:4px;
+  }
+  /* explain buttons same treatment */
+  #explain #backToResult,#explain #investigateBtn,#explain #restartFromExplain,#explain button{
+    background:linear-gradient(90deg,var(--accent),var(--accent-2),var(--accent));
+    background-size:200% auto;
+    animation:btnShimmer 3s linear infinite;
+    color:#fff;
+    font-weight:800;
+    border:none;
+    padding:10px 16px;border-radius:10px;
+    box-shadow:0 6px 24px rgba(var(--ar),0.2);
+    overflow:hidden;
+  }
+  #explain #backToResult:hover,#explain #investigateBtn:hover,#explain #restartFromExplain:hover,#explain button:hover{
+    transform:translateY(-5px) scale(1.04);box-shadow:0 14px 40px rgba(var(--ar),0.35);
+  }
+  #explain #backToResult:focus-visible,#explain #investigateBtn:focus-visible,#explain #restartFromExplain:focus-visible,#explain button:focus-visible{outline:3px solid rgba(var(--ar),0.5);outline-offset:4px}
+  /* ===== SUCCESS OVERLAY ===== */
+  #confettiCanvas{position:fixed;inset:0;width:100vw;height:100vh;pointer-events:none;z-index:300;display:none}
+  #successBanner{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) scale(0);z-index:310;pointer-events:none;display:none;
+    background:linear-gradient(135deg,var(--accent),var(--accent-2));
+    padding:16px 40px;border-radius:20px;
+    font-size:2rem;font-weight:900;color:#fff;
+    box-shadow:0 20px 60px rgba(var(--ar),0.5);
+    text-align:center;letter-spacing:2px;
+    animation:none;white-space:nowrap;
+  }
+  #successBanner.show{display:block;animation:bannerPop .5s cubic-bezier(.34,1.56,.64,1) forwards}
+  @keyframes bannerPop{0%{transform:translate(-50%,-50%) scale(0);opacity:0}60%{transform:translate(-50%,-50%) scale(1.08)}100%{transform:translate(-50%,-50%) scale(1);opacity:1}}
+  /* success ring on result card */
+  #resultCard.success-glow{animation:successRing 1.8s ease-in-out 3}
+  @keyframes successRing{0%,100%{box-shadow:0 6px 18px rgba(2,6,23,0.5)}50%{box-shadow:0 0 0 6px rgba(var(--ar),0.35),0 20px 60px rgba(var(--ar),0.3)}}
+  /* flash overlay for failure */
+  #flashOverlay{position:fixed;inset:0;z-index:299;pointer-events:none;background:rgba(239,68,68,0);transition:background .15s}
+  #flashOverlay.flash{background:rgba(239,68,68,0.18)}
+
+  /* welcome background blobs */
+  .welcome{position:relative;overflow:visible}
+  .welcome .blob{position:absolute;border-radius:50%;filter:blur(32px);opacity:0.12;z-index:0}
+  .welcome .blob.one{width:220px;height:220px;background:radial-gradient(circle at 30% 30%, #ff8a4d, transparent 40%);left:-40px;top:-40px}
+  .welcome .blob.two{width:160px;height:160px;background:radial-gradient(circle at 70% 60%, #06b6d4, transparent 40%);right:-20px;bottom:-20px}
+  @keyframes blobFloat1{0%{transform:translateY(0) scale(1)}50%{transform:translateY(-12px) scale(1.06)}100%{transform:translateY(0) scale(1)}}
+  @keyframes blobFloat2{0%{transform:translateY(0) scale(1)}50%{transform:translateY(10px) scale(.98)}100%{transform:translateY(0) scale(1)}}
+  /* welcome canvas for fire trail - full viewport overlay */
+  #welcomeTrail{position:fixed;left:0;top:0;width:100vw;height:100vh;z-index:60;pointer-events:none;display:none}
+  /* stronger perspective for 3D effect */
+  .panel{perspective:1200px}
+
+  .game.enter{animation:gameIn .5s ease both}
+  @keyframes gameIn{0%{transform:translateY(18px);opacity:0}100%{transform:none;opacity:1}}
+
+  /* panel shift when welcome exits */
+  .panel.shift{animation:panelShift .45s ease both}
+  @keyframes panelShift{0%{transform:translateY(0)}100%{transform:translateY(-8px)}}
+
+  /* modal open animation */
+  #infoModal{display:none}
+  #infoModal.open{display:flex;animation:modalIn .24s ease both}
+  @keyframes modalIn{0%{opacity:0;transform:scale(.98)}100%{opacity:1;transform:scale(1)}}
+
+      /* difficulty */
+      .difficulty{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+      input[type=number]{padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,0.06);background:transparent;color:inherit;width:120px}
+
+      /* question card */
+      .card{background:var(--card);padding:16px;border-radius:12px;border:1px solid rgba(255,255,255,0.04);box-shadow:0 6px 18px rgba(2,6,23,0.5)}
+      .cardTitle{font-weight:700;margin-bottom:10px}
+      .nums{display:flex;flex-wrap:wrap;gap:8px}
+      .num{background:rgba(255,255,255,0.03);padding:6px 8px;border-radius:8px;font-size:0.95rem}
+
+      .controls{display:flex;gap:10px;align-items:center;margin-top:12px}
+
+      /* animations */
+      .pop{animation:pop .36s ease both}
+      @keyframes pop{0%{transform:scale(.9);opacity:0}60%{transform:scale(1.04);opacity:1}100%{transform:scale(1)}}
+
+      .confetti-piece{position:absolute;width:8px;height:14px;background:var(--accent);opacity:0;transform:translateY(-20px) rotate(10deg);border-radius:2px}
+      .explode{animation:explode .9s ease forwards}
+      @keyframes explode{0%{opacity:1;transform:translateY(0) rotate(0)}100%{opacity:0;transform:translateY(-200px) rotate(720deg)}}
+
+      .shake{animation:shake .6s ease}
+      @keyframes shake{0%{transform:translateX(0)}25%{transform:translateX(-8px)}50%{transform:translateX(8px)}75%{transform:translateX(-6px)}100%{transform:translateX(0)}}
+
+      .result{font-size:1.25rem;margin-top:12px}
+      .muted{color:var(--muted)}
+      footer{margin-top:14px;color:var(--muted);font-size:0.85rem}
+      /* Responsive / Mobile improvements */
+      @media (max-width:720px){
+        .wrap{padding:12px}
+        .panel{padding:16px;border-radius:12px}
+        h1{font-size:1.3rem}
+        .logo{width:68px;height:68px;font-size:1.2rem}
+        .btn{padding:10px 12px;border-radius:10px;font-size:1rem}
+        .btn, .btn.ghost{width:100%;display:inline-flex;justify-content:center}
+        #welcome .welcome > div{width:100%}
+        .difficulty{flex-direction:column;align-items:flex-start}
+        input[type=number]{width:100%}
+        .controls{flex-direction:column;align-items:stretch}
+        .controls .btn{width:100%}
+        .nums{gap:6px}
+        .num{flex:1 0 20%;padding:8px 10px;font-size:0.95rem;text-align:center}
+        #cardNumbers{max-height:36vh;overflow:auto;padding-right:6px}
+        .card{padding:12px}
+        #resultCard{padding:14px}
+        footer{font-size:0.8rem}
+      }
+      @media (max-width:420px){
+        .num{flex:1 0 30%;font-size:0.9rem}
+        h1{font-size:1.15rem}
+        .logo{width:60px;height:60px}
+        .btn{padding:10px;border-radius:10px;font-size:0.98rem}
+        #cardNumbers{max-height:42vh}
+      }
+      /* keypad & preset styles */
+      #keypad .btn{padding:12px;font-size:1.05rem;border-radius:10px}
+      .preset{width:100%;text-align:center}
+  /* Investigate full-screen overlay */
+  #investigateDetailFull{background:rgba(4,6,12,0.6);position:fixed;inset:0;z-index:80;display:none;align-items:center;justify-content:center}
+  #investigateDetailFull .card{max-height:86vh;overflow:auto}
+  #investigateDetailFull.enter{animation:modalIn .32s ease both}
+  #investigateDetailFull.exit{animation:welcomeOut .36s ease both}
+  /* Candidate buttons simplified */
+  #investigateList .btn{padding:10px;background:transparent;border:1px solid rgba(255,255,255,0.06);color:var(--muted);border-radius:8px}
+  #investigateList .btn:hover{color:var(--accent);transform:translateY(-4px)}
+  /* badges and mismatch highlight */
+  .badge{display:inline-block;padding:6px 8px;border-radius:8px;font-weight:700;margin-right:8px}
+  .badge.yes{background:rgba(16,185,129,0.12);color:var(--success);border:1px solid rgba(16,185,129,0.12)}
+  .badge.no{background:rgba(239,68,68,0.06);color:var(--muted);border:1px solid rgba(255,255,255,0.03)}
+  .badge.wrong{background:linear-gradient(90deg,#ff4d4d,#ff8a4d);color:#200;box-shadow:0 8px 30px rgba(255,72,72,0.18);border:1px solid rgba(255,72,72,0.06)}
+  .mismatch{border:1px solid rgba(239,68,68,0.3);box-shadow:0 10px 30px rgba(239,68,68,0.06)}
+  /* fire glow animation for wrong answer */
+  @keyframes fireGlow{0%{box-shadow:0 0 0 rgba(255,90,90,0)}50%{box-shadow:0 6px 30px rgba(255,90,90,0.28)}100%{box-shadow:0 0 0 rgba(255,90,90,0)}}
+  .badge.wrong{animation:fireGlow 1.2s ease-in-out infinite}
+  /* style the card snapshot inside full detail */
+  .snapshot{display:flex;flex-direction:column;gap:8px;margin-top:10px}
+  .snapshot .card{background:rgba(0,0,0,0.28);border-radius:10px;padding:10px}
+  .snapshot .nums{display:flex;flex-wrap:wrap;gap:6px}
+  .snapshot .num{background:rgba(255,255,255,0.03);padding:6px 8px;border-radius:8px;font-size:0.95rem}
+  /* card-level mismatch glow: highlights the entire card when a candidate differs from your answer */
+  .card.mismatch{border:1px solid rgba(255,72,72,0.22);box-shadow:0 12px 40px rgba(255,72,72,0.12);animation:cardFire 1.2s ease-in-out infinite}
+  @keyframes cardFire{0%{box-shadow:0 8px 20px rgba(255,72,72,0.06)}50%{box-shadow:0 18px 48px rgba(255,90,90,0.22)}100%{box-shadow:0 8px 20px rgba(255,72,72,0.06)}}
+  /* positive match green glow */
+  .card.match{border:1px solid rgba(16,185,129,0.18);box-shadow:0 12px 40px rgba(16,185,129,0.08);animation:cardGlow 1.4s ease-in-out infinite}
+  @keyframes cardGlow{0%{box-shadow:0 8px 18px rgba(16,185,129,0.04)}50%{box-shadow:0 16px 36px rgba(16,185,129,0.14)}100%{box-shadow:0 8px 18px rgba(16,185,129,0.04)}}
+  .num.selected{background:rgba(6,182,198,0.12);border:1px solid rgba(6,182,198,0.08)}
+  /* bottom loading pill */
+  .bottom-loader{position:fixed;left:50%;transform:translateX(-50%);bottom:18px;background:rgba(255,255,255,0.03);padding:8px 12px;border-radius:999px;border:1px solid rgba(255,255,255,0.04);display:flex;gap:10px;align-items:center;z-index:90}
+  .dots{display:inline-flex;gap:6px}
+  .dot{width:8px;height:8px;border-radius:999px;background:var(--muted);opacity:0.6}
+  .dot.animate{animation:dotPulse 1s infinite}
+  @keyframes dotPulse{0%{transform:scale(.8);opacity:.4}50%{transform:scale(1.15);opacity:1}100%{transform:scale(.8);opacity:.4}}
+  .bottom-loader.hidden{opacity:0;transform:translateX(-50%) translateY(8px);pointer-events:none;transition:opacity .36s,transform .36s}
+  @keyframes spin{0%{transform:rotate(0)}100%{transform:rotate(360deg)}}

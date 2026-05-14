@@ -1,0 +1,247 @@
+﻿<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Mind Reader — Guess My Number</title>
+    <meta name="description" content="A magical math trick that guesses your number using binary logic. Pick a theme, pick a number, and let the Mind Reader predict it!" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+        <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <!-- animated background orbs -->
+    <div class="bg-orbs" aria-hidden="true"><div class="orb orb1"></div><div class="orb orb2"></div><div class="orb orb3"></div></div>
+    <!-- theme switcher -->
+    <div id="themeSwitcher" role="navigation" aria-label="Theme switcher">
+      <button id="themeToggleBtn" title="Change theme" aria-label="Change theme">🎨</button>
+      <div id="themePalette">
+        <div class="theme-dot" data-t="cyber" title="Cyber"><span class="theme-dot-label">Cyber</span></div>
+        <div class="theme-dot" data-t="inferno" title="Inferno"><span class="theme-dot-label">Inferno</span></div>
+        <div class="theme-dot" data-t="forest" title="Forest"><span class="theme-dot-label">Forest</span></div>
+        <div class="theme-dot" data-t="royal" title="Royal"><span class="theme-dot-label">Royal</span></div>
+        <div class="theme-dot" data-t="rose" title="Rose</span>"><span class="theme-dot-label">Rose</span></div>
+        <div class="theme-dot" data-t="ocean" title="Ocean"><span class="theme-dot-label">Ocean</span></div>
+      </div>
+    </div>
+    <!-- confetti canvas + success banner + flash overlay -->
+    <canvas id="confettiCanvas" aria-hidden="true"></canvas>
+    <div id="successBanner" aria-hidden="true">YOU GOT IT! &#127881;</div>
+    <div id="flashOverlay" aria-hidden="true"></div>
+    <div class="wrap">
+      <div class="panel">
+        
+        <section id="welcome" class="section active">
+          <div class="welcome">
+            <canvas id="welcomeTrail" aria-hidden="true" style="position:absolute;inset:0;width:100%;height:100%;z-index:5;pointer-events:none"></canvas>
+            <div class="blob one" aria-hidden="true"></div>
+            <div class="blob two" aria-hidden="true"></div>
+            <div class="logo">G</div>
+            <h1>Welcome — Guess My Number</h1>
+            <p class="lead">A fun math trick: pick a number and I'll ask a few questions to predict it. Click Start to continue.</p>
+            <div style="display:flex;gap:10px;align-items:center">
+              <!-- Start button removed: Use Difficulty -> Begin to start the game -->
+              <button id="howBtn" class="btn ghost">Info</button>
+            </div>
+          </div>
+        </section>
+
+        <!-- Candidates / explanation section shown when prediction is wrong -->
+        <section id="explain" class="section">
+          <div style="display:flex;flex-direction:column;gap:12px">
+            <h1 style="margin:0">Let's investigate</h1>
+            <p class="muted">Here are numbers that match most of your answers. Tap a number to see which question likely caused the mismatch.</p>
+            <div id="candidateList" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(100px,1fr));gap:8px;margin-top:8px"></div>
+            <div id="candidateExplain" class="card" style="margin-top:12px;display:none">
+              <div id="explainTitle" class="cardTitle">Explanation</div>
+              <div id="explainBody" class="muted" style="margin-top:8px"></div>
+            </div>
+            <div style="display:flex;gap:8px;margin-top:12px">
+              <button id="backToResult" class="btn ghost">Back to result</button>
+              <button id="investigateBtn" class="btn">Investigate</button>
+              <button id="restartFromExplain" class="btn">Play again</button>
+            </div>
+          </div>
+        </section>
+
+        <!-- Investigation: broader candidate analysis -> ranked by number of differing answers -->
+        <section id="investigate" class="section">
+          <div style="display:flex;flex-direction:column;gap:12px">
+            <h1 style="margin:0">Investigation — possible numbers</h1>
+            <p class="muted">These numbers are ranked by how closely they match your answers. Fewer differences means more likely. Click a number to see which questions differ.</p>
+            <div id="investigateList" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(90px,1fr));gap:8px;margin-top:8px;max-height:360px;overflow:auto"></div>
+            <div id="investigateDetail" class="card" style="margin-top:12px;display:none">
+              <div id="investigateTitle" class="cardTitle">Candidate detail</div>
+              <div id="investigateBody" class="muted" style="margin-top:8px"></div>
+            </div>
+            <div style="display:flex;gap:8px;margin-top:12px">
+              <button id="backToExplain" class="btn ghost">Back</button>
+              <button id="restartFromInvestigate" class="btn">Play again</button>
+            </div>
+          </div>
+        </section>
+
+        <!-- Full-window candidate detail (animated) -->
+        <section id="investigateDetailFull" class="section" aria-hidden="true" style="display:none;align-items:center;justify-content:center;">
+          <div class="card pop" style="max-width:820px;width:95%;padding:20px;position:relative">
+            <button id="closeInvestigateFull" class="btn ghost" style="position:absolute;right:12px;top:12px">Close</button>
+            <div id="investigateFullTitle" class="cardTitle">Candidate</div>
+            <div id="investigateFullBody" class="muted" style="margin-top:12px;white-space:pre-wrap"></div>
+            <div style="display:flex;gap:8px;margin-top:12px;justify-content:flex-end">
+              <button id="investigateBackToList" class="btn ghost">Back to list</button>
+              <button id="investigateRestart" class="btn">Play again</button>
+            </div>
+          </div>
+        </section>
+
+        
+        
+        
+        
+        <!-- Main landing page (after welcome) -->
+        <section id="main" class="section">
+          <div style="display:flex;flex-direction:column;align-items:center;gap:12px">
+            <h1 style="margin:0">Guess My Number — Ready?</h1>
+            <p class="muted" style="max-width:560px;text-align:center">Press Start to begin. The game will ask a few short questions to guess your chosen number — answer honestly. (Brief help shown below.)</p>
+            <div style="height:12px"></div>
+            <div class="muted" style="margin-top:8px;text-align:center">How to play: pick a number within the chosen limit. You'll answer a short parity question, then a few yes/no screens. Tap clearly for best results.</div>
+          </div>
+        </section>
+
+        <!-- Difficulty / settings (dial pad + presets) -->
+        <section id="difficultySection" class="section">
+          <div style="display:flex;flex-direction:column;gap:12px">
+            <h1 style="margin:0">Set maximum (difficulty)</h1>
+            <div style="display:flex;gap:12px;align-items:flex-start;flex-wrap:wrap">
+              <div style="flex:1;min-width:220px">
+                <label class="muted">Dial your max value</label>
+                <input id="dialInput" type="text" inputmode="numeric" pattern="[0-9]*" placeholder="e.g. 31" readonly style="width:100%;padding:12px;border-radius:8px;border:1px solid rgba(255,255,255,0.06);background:transparent;color:inherit;margin-top:6px;font-size:1.1rem;text-align:center" />
+                <div id="dialHint" class="muted" style="margin-top:6px;font-size:0.95rem">Minimum value: 15</div>
+                <div id="dialError" class="muted" style="margin-top:6px;color:#ffb4a2;display:none;font-size:0.95rem">Please enter a number >= 15</div>
+                <div id="keypad" style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px">
+                  <button class="key btn">1</button>
+                  <button class="key btn">2</button>
+                  <button class="key btn">3</button>
+                  <button class="key btn">4</button>
+                  <button class="key btn">5</button>
+                  <button class="key btn">6</button>
+                  <button class="key btn">7</button>
+                  <button class="key btn">8</button>
+                  <button class="key btn">9</button>
+                  <button id="clearKey" class="btn ghost">Clear</button>
+                  <button class="key btn">0</button>
+                  <button id="backspaceKey" class="btn ghost">⌫</button>
+                </div>
+              </div>
+              <!-- Preset options removed: use the dial above to enter a custom max value -->
+            </div>
+            <div style="display:flex;gap:8px">
+              <button id="beginGame" class="btn" disabled>Begin</button>
+            </div>
+          </div>
+        </section>
+
+        <section id="game" class="section">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">
+            <div>
+              <h1 style="margin:0">Game</h1>
+              <p class="muted">Answer the following questions to help the system guess your number.</p>
+            </div>
+            <!-- keep a hidden maxInput so existing JS can reference it if needed -->
+            <input id="maxInput" type="hidden" value="31" />
+          </div>
+
+          <hr style="opacity:.06;margin:12px 0" />
+
+          <!-- Parity prompt (odd/even) shown after difficulty selection -->
+          <div id="parityArea" class="card" style="margin-top:12px;display:none">
+            <div class="cardTitle">Quick question — Is your number odd or even?</div>
+            <div style="margin-top:8px;color:var(--muted)">Answering now can save a question (parity = least-significant bit).</div>
+            <div style="display:flex;gap:10px;margin-top:12px;flex-wrap:wrap">
+              <button id="oddBtn" class="btn">Odd</button>
+              <button id="evenBtn" class="btn ghost">Even</button>
+              <button id="skipParity" class="btn ghost">Not sure / Skip</button>
+            </div>
+          </div>
+
+          <div id="questionArea" class="card" style="margin-top:12px">
+            <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:8px">
+              <div id="cardTitle" class="cardTitle" style="margin:0">Question 1</div>
+              <span id="parityBadge"></span>
+            </div>
+            <div id="historyRow"></div>
+            <div id="progressBar"><div id="progressFill"></div></div>
+            <div id="cardNumbers" class="nums" aria-live="polite"></div>
+            <div class="controls" style="margin-top:14px">
+              <button id="yesBtn" class="btn">✓ Yes</button>
+              <button id="noBtn" class="btn ghost">✗ No</button>
+              <button id="prevBtn" class="btn ghost" disabled style="margin-left:auto">&#8592; Prev</button>
+              <div id="progress" class="muted" style="font-size:.85rem"></div>
+            </div>
+          </div>
+        </section>
+
+        
+        <section id="result" class="section">
+          <div class="card pop" id="resultCard" style="position:relative;overflow:visible">
+            <div class="result">I predict your number is: <strong id="resultNum">—</strong></div>
+            <div id="resultMessage" class="muted" style="margin-top:8px"></div>
+            <div style="margin-top:12px;display:flex;gap:8px">
+              <button id="again" class="btn ghost">Play again</button>
+              <button id="wrongBtn" class="btn ghost">Answer is wrong</button>
+              <button id="newGame" class="btn">Change difficulty</button>
+            </div>
+          </div>
+        </section>
+
+        <footer> make sure the number that in the given question</footer><br>
+        <footer>if you do make any mistake in the quesion the answer will be also wrong so don't make any mistakes</footer>
+      </div>
+    </div>
+    <div id="infoModal" role="dialog" aria-modal="true" aria-hidden="true" style="display:none;position:fixed;inset:0;background:rgba(2,6,23,0.6);align-items:center;justify-content:center;z-index:40">
+      <div style="background:var(--card);padding:18px;border-radius:12px;max-width:820px;color:inherit;border:1px solid rgba(255,255,255,0.04);box-shadow:0 10px 30px rgba(0,0,0,0.6)">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:8px">
+          <strong>About this page — Details</strong>
+          <button id="closeInfo" class="btn ghost">Close</button>
+        </div>
+        <div style="max-height:60vh;overflow:auto;padding-right:8px;color:var(--muted);font-size:0.95rem;line-height:1.4">
+          <p><strong>Purpose</strong>: Interactive math trick that predicts a user's chosen integer between 1 and the selected maximum by asking which precomputed "cards" contain the number.</p>
+          <p><strong>Algorithm / Principle</strong>: Each card corresponds to a binary place value (1,2,4,8,...). When a user confirms their number appears on a card, that place value is added to a running sum. After all cards are asked, the sum is the predicted number.</p>
+          <p><strong>Inputs</strong>: A positive integer maximum (default 31). The user mentally selects a number in the range [1, max]. Then answers Yes/No for each card.</p>
+          <p><strong>Outputs</strong>: The predicted integer (sum of selected bit values). If the sum is outside [1, max], the system treats the result as invalid and shows a failure animation.</p>
+          <p><strong>Edge cases</strong>: If the user answers inconsistently or changes their number mid-flow the prediction can be invalid. Entering a non-integer or a value &lt; 2 will prompt an alert.</p>
+          <p><strong>Files & Structure</strong>: Single-file self-contained HTML with embedded CSS and JS. No backend required. To run, open <code>guess_number.html</code> in a browser.</p>
+          <p><strong>Animations</strong>: Pop animation for card transitions, confetti-like pieces on success, and shake animation on failure. Confetti elements are removed after animation to avoid DOM growth.</p>
+          <p><strong>Accessibility</strong>: The modal uses ARIA role dialog. Buttons are focusable. Keyboard navigation improvements can be added on request.</p>
+          <p><strong>Customization</strong>: To support larger ranges (e.g., up to 1023), increase the max value — the page will compute the required number of bit-questions automatically (number of bits = ceil(log2(max+1))).</p>
+          <p>If you'd like I can extract the JavaScript into a separate file, add unit tests for the card generation, or replace the DOM confetti with a canvas-based confetti library.</p>
+        </div>
+      </div>
+    </div>
+
+      <!-- bottom loading pill -->
+      <div id="bottomLoader" class="bottom-loader" role="status" aria-live="polite">
+        <div style="font-weight:700;color:var(--muted);font-size:0.95rem">Loading</div>
+        <div class="dots">
+          <div class="dot animate" style="animation-delay:0s"></div>
+          <div class="dot animate" style="animation-delay:.15s"></div>
+          <div class="dot animate" style="animation-delay:.3s"></div>
+        </div>
+
+        <!-- centered restart loader overlay -->
+        <div id="centerLoader" style="display:none;position:fixed;inset:0;align-items:center;justify-content:center;z-index:120;backdrop-filter:blur(2px);background:rgba(2,6,12,0.36)">
+          <div class="card" style="padding:18px;display:flex;align-items:center;gap:12px">
+            <div class="ring" aria-hidden="true">
+              <div class="inner"></div>
+              <div class="inner two"></div>
+              <div class="inner three"></div>
+            </div>
+            <div style="font-weight:700">Restarting…</div>
+          </div>
+        </div>
+      </div>
+
+          <script src="script.js"></script>
+  </body>
+</html>
+

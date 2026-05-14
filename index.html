@@ -3,17 +3,78 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>Guess Your Number — Interactive</title>
+    <title>Mind Reader — Guess My Number</title>
+    <meta name="description" content="A magical math trick that guesses your number using binary logic. Pick a theme, pick a number, and let the Mind Reader predict it!" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
     <style>
-      :root{--bg:#071426;--card:#0f1724;--accent:#06b6d4;--accent-2:#7c3aed;--muted:#9ca3af;--success:#10b981;--danger:#ef4444}
-  /* danger theme toggled when user enters below minimum */
+      /* ===== THEMES ===== */
+      :root,[data-theme=cyber]{--bg:#071426;--bg2:#041021;--card:#0f1724;--border:rgba(255,255,255,0.06);--accent:#06b6d4;--accent-2:#7c3aed;--ar:6,182,212;--a2r:124,58,237;--muted:#9ca3af;--success:#10b981;--danger:#ef4444;--btn-g:linear-gradient(135deg,#06b6d4,#7c3aed);--text:#e6eef8}
+      [data-theme=inferno]{--bg:#150505;--bg2:#0d0202;--card:#1f0808;--border:rgba(255,120,0,0.08);--accent:#f97316;--accent-2:#ef4444;--ar:249,115,22;--a2r:239,68,68;--muted:#a07060;--success:#10b981;--danger:#ef4444;--btn-g:linear-gradient(135deg,#f97316,#ef4444);--text:#fef3e2}
+      [data-theme=forest]{--bg:#051205;--bg2:#031003;--card:#091509;--border:rgba(34,197,94,0.08);--accent:#22c55e;--accent-2:#059669;--ar:34,197,94;--a2r:5,150,105;--muted:#6b9e7a;--success:#10b981;--danger:#ef4444;--btn-g:linear-gradient(135deg,#22c55e,#059669);--text:#dcfce7}
+      [data-theme=royal]{--bg:#0d0516;--bg2:#080310;--card:#150a22;--border:rgba(168,85,247,0.08);--accent:#a855f7;--accent-2:#7c3aed;--ar:168,85,247;--a2r:124,58,237;--muted:#9070b0;--success:#10b981;--danger:#ef4444;--btn-g:linear-gradient(135deg,#a855f7,#7c3aed);--text:#f3e8ff}
+      [data-theme=rose]{--bg:#160610;--bg2:#100408;--card:#1f0b17;--border:rgba(244,63,94,0.08);--accent:#f43f5e;--accent-2:#fb923c;--ar:244,63,94;--a2r:251,146,60;--muted:#a0708a;--success:#10b981;--danger:#ef4444;--btn-g:linear-gradient(135deg,#f43f5e,#fb923c);--text:#fff1f3}
+      [data-theme=ocean]{--bg:#021525;--bg2:#011020;--card:#041e35;--border:rgba(14,165,233,0.08);--accent:#0ea5e9;--accent-2:#06b6d4;--ar:14,165,233;--a2r:6,182,212;--muted:#6090b0;--success:#10b981;--danger:#ef4444;--btn-g:linear-gradient(135deg,#0ea5e9,#06b6d4);--text:#e0f2fe}
+      /* danger override */
+      html.theme-danger{--accent:#ff4d4d;--accent-2:#ff7a5a}
+      /* ===== TRANSITION ALL on theme change ===== */
+      body,html{transition:background .4s,color .4s}
+      .panel,.card,.btn{transition:background .35s,border-color .35s,box-shadow .35s,color .25s}
+      /* ===== ANIMATED BG ORBS ===== */
+      .bg-orbs{position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden}
+      .orb{position:absolute;border-radius:50%;filter:blur(90px);opacity:.13;animation:orbFloat 9s ease-in-out infinite}
+      .orb1{width:380px;height:380px;background:var(--accent);top:-80px;left:-80px;animation-delay:0s}
+      .orb2{width:280px;height:280px;background:var(--accent-2);bottom:-60px;right:-60px;animation-delay:-4s}
+      .orb3{width:180px;height:180px;background:var(--accent);top:55%;left:65%;animation-delay:-7s;animation-duration:12s}
+      @keyframes orbFloat{0%,100%{transform:translate(0,0) scale(1)}33%{transform:translate(18px,-14px) scale(1.06)}66%{transform:translate(-10px,18px) scale(.97)}}
+      /* ===== THEME SWITCHER ===== */
+      #themeSwitcher{position:fixed;top:16px;right:16px;z-index:200;display:flex;flex-direction:column;align-items:flex-end;gap:8px}
+      #themeToggleBtn{width:42px;height:42px;border-radius:50%;background:var(--card);border:1px solid var(--border);cursor:pointer;font-size:1.2rem;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 20px rgba(0,0,0,0.4);transition:transform .2s,box-shadow .2s;color:var(--text)}
+      #themeToggleBtn:hover{transform:scale(1.1) rotate(20deg);box-shadow:0 8px 30px rgba(0,0,0,0.5)}
+      #themePalette{display:none;flex-direction:column;gap:6px;align-items:flex-end;animation:fadeSlideIn .2s ease both}
+      #themePalette.open{display:flex}
+      @keyframes fadeSlideIn{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:none}}
+      .theme-dot{width:32px;height:32px;border-radius:50%;cursor:pointer;border:2px solid transparent;box-shadow:0 2px 10px rgba(0,0,0,0.4);transition:transform .18s,border-color .18s,box-shadow .18s;position:relative}
+      .theme-dot:hover,.theme-dot.active{transform:scale(1.22);border-color:#fff;box-shadow:0 4px 18px rgba(255,255,255,0.25)}
+      .theme-dot[data-t=cyber]{background:linear-gradient(135deg,#06b6d4,#7c3aed)}
+      .theme-dot[data-t=inferno]{background:linear-gradient(135deg,#f97316,#ef4444)}
+      .theme-dot[data-t=forest]{background:linear-gradient(135deg,#22c55e,#059669)}
+      .theme-dot[data-t=royal]{background:linear-gradient(135deg,#a855f7,#7c3aed)}
+      .theme-dot[data-t=rose]{background:linear-gradient(135deg,#f43f5e,#fb923c)}
+      .theme-dot[data-t=ocean]{background:linear-gradient(135deg,#0ea5e9,#06b6d4)}
+      .theme-dot-label{position:absolute;right:40px;top:50%;transform:translateY(-50%);background:var(--card);padding:3px 8px;border-radius:6px;font-size:.75rem;white-space:nowrap;color:var(--text);border:1px solid var(--border);opacity:0;pointer-events:none;transition:opacity .15s}
+      .theme-dot:hover .theme-dot-label{opacity:1}
+      /* ===== PARITY BADGE ===== */
+      #parityBadge{display:none;align-items:center;gap:6px;padding:5px 10px;border-radius:99px;background:rgba(var(--ar),0.12);border:1px solid rgba(var(--ar),0.2);color:var(--accent);font-size:.82rem;font-weight:700;animation:badgePop .3s ease both}
+      @keyframes badgePop{from{transform:scale(.85);opacity:0}to{transform:scale(1);opacity:1}}
+      /* ===== HISTORY DOTS ===== */
+      #historyRow{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:8px;min-height:18px}
+      .hdot{width:14px;height:14px;border-radius:50%;border:2px solid var(--border);background:var(--card);transition:background .2s,border-color .2s;position:relative}
+      .hdot.yes{background:var(--accent);border-color:var(--accent)}
+      .hdot.no{background:var(--card);border-color:var(--muted)}
+      .hdot.current{border-color:var(--accent);animation:pulse 1s infinite}
+      @keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(var(--ar),.4)}50%{box-shadow:0 0 0 5px rgba(var(--ar),0)}}
+      /* ===== PROGRESS BAR ===== */
+      #progressBar{height:4px;background:rgba(255,255,255,0.06);border-radius:99px;overflow:hidden;margin:8px 0 12px}
+      #progressFill{height:100%;background:var(--btn-g);border-radius:99px;transition:width .4s cubic-bezier(.4,0,.2,1);width:0%}
+      /* ===== RIPPLE ===== */
+      .ripple{position:absolute;border-radius:50%;background:rgba(255,255,255,0.15);transform:scale(0);animation:rippleAnim .4s ease-out forwards;pointer-events:none;z-index:10}
+      @keyframes rippleAnim{to{transform:scale(3);opacity:0}}
+      /* ===== NUM TILE HOVER ===== */
+      .num{cursor:default;transition:background .18s,transform .18s,box-shadow .18s}
+      .num:hover{background:rgba(var(--ar),.12);transform:translateY(-2px) scale(1.05);box-shadow:0 4px 12px rgba(var(--ar),.15)}
+      /* danger theme */
+      html.theme-danger .btn{background:linear-gradient(90deg,var(--accent),var(--accent-2));}
+      html.theme-danger .btn::before{background:radial-gradient(closest-side,rgba(255,77,77,.18),rgba(255,77,77,.06) 45%,transparent 60%)}
+      /* ===== KEEP remaining original danger text ===== */
+      /* danger theme toggled when user enters below minimum */
   .theme-danger{--accent:#ff4d4d;--accent-2:#ff7a5a}
   /* ensure primary buttons reflect danger accent when theme is active */
   .theme-danger .btn{background:linear-gradient(90deg,var(--accent),var(--accent-2));}
   .theme-danger .btn::before{background:radial-gradient(closest-side, rgba(255,77,77,0.18), rgba(255,77,77,0.06) 45%, transparent 60%)}
       *{box-sizing:border-box}
       html,body{height:100%}
-      body{margin:0;font-family:Inter,system-ui,Segoe UI,Roboto,Arial;background:linear-gradient(180deg,var(--bg),#041021);color:#e6eef8;display:flex;align-items:center;justify-content:center;padding:24px}
+      body{margin:0;font-family:'Inter',system-ui,Segoe UI,Roboto,Arial;background:linear-gradient(180deg,var(--bg),var(--bg2,#041021));color:var(--text,#e6eef8);display:flex;align-items:flex-start;justify-content:center;padding:24px 16px 80px;min-height:100vh}
       .wrap{width:100%;max-width:980px}
       .panel{background:linear-gradient(180deg,rgba(255,255,255,0.02),transparent);padding:24px;border-radius:14px;border:1px solid rgba(255,255,255,0.04);box-shadow:0 10px 30px rgba(2,6,23,0.6)}
       h1{margin:0 0 8px;font-size:1.6rem}
@@ -37,7 +98,7 @@
     - z-index on pseudo-element is negative so it sits behind the button
     - ghost buttons use a lower-intensity glow */
   /* default: blue primary button (cool) */
-  .btn{background:linear-gradient(90deg,#0ea5ff,#0369a1);color:#fff;border:0;padding:10px 14px;border-radius:10px;cursor:pointer;font-weight:700;transition:transform .18s ease,box-shadow .18s ease,background .18s;position:relative;overflow:visible;z-index:1}
+  .btn{background:var(--btn-g,linear-gradient(135deg,#06b6d4,#7c3aed));color:#fff;border:0;padding:10px 14px;border-radius:10px;cursor:pointer;font-weight:700;transition:transform .18s ease,box-shadow .18s ease,background .4s;position:relative;overflow:hidden;z-index:1}
   .btn::before{content:'';position:absolute;left:50%;top:50%;transform:translate(-50%,-50%) scale(.92);width:160%;height:160%;border-radius:14px;pointer-events:none;z-index:-1;opacity:0;filter:blur(14px);transition:opacity .22s cubic-bezier(.2,.9,.2,1),transform .22s cubic-bezier(.2,.9,.2,1),background .22s}
   .btn:hover::before,.btn:focus::before{opacity:1;transform:translate(-50%,-50%) scale(1)}
   /* default glow: cool blue halo */
@@ -49,7 +110,7 @@
   .btn.ghost{background:transparent;border:1px solid rgba(255,255,255,0.06);color:var(--muted)}
   /* Parity buttons (odd/even/skip) - harmonized variants */
   /* parity buttons inherit base style (blue) but remain distinct if needed */
-  #oddBtn,#evenBtn,#skipParity{background:linear-gradient(90deg,#0ea5ff,#0369a1);color:#fff;border:none;box-shadow:0 8px 28px rgba(3,105,161,0.06)}
+  #oddBtn,#evenBtn,#skipParity{background:var(--btn-g,linear-gradient(135deg,#06b6d4,#7c3aed));color:#fff;border:none;box-shadow:0 8px 28px rgba(var(--ar,6,182,212),0.12)}
   /* hover/focus micro-interactions: transform + switch to orange 'fire' gradient */
   #oddBtn:hover,#evenBtn:hover,#skipParity:hover{transform:translateY(-6px) scale(1.03);transition:transform .18s, box-shadow .2s, background .22s}
   #oddBtn:hover,#evenBtn:hover,#skipParity:hover{background:linear-gradient(90deg,#ff6b3d,#ff9a4d);color:#220;box-shadow:0 18px 48px rgba(255,110,60,0.22)}
@@ -79,53 +140,64 @@
   #centerLoader .ring .inner.three{border-top-color:rgba(124,58,237,0.9);border-width:2px;animation-duration:1.8s}
 
   /* result buttons animation - make all three animate and share the palette */
-  /* result buttons: animate a blue -> red cycling gradient for all buttons in the result area */
-  #result button, #result .btn{transition:transform .16s ease, box-shadow .18s ease, background .22s; background:linear-gradient(90deg,#0ea5ff 0%, #60a5fa 25%, #ff7a5a 60%, #ff4d4d 100%);color:#041026;font-weight:800;background-size:300% 100%;animation:resultGradient 5.5s linear infinite}
-  #result button:hover, #result .btn:hover{transform:translateY(-6px) scale(1.03);box-shadow:0 18px 48px rgba(255,77,77,0.16)}
-  /* ensure ghost variants still show the animated palette in result area */
-  #result .btn.ghost{background:linear-gradient(90deg,#0ea5ff 0%, #60a5fa 25%, #ff7a5a 60%, #ff4d4d 100%);color:#041026;border:none}
-  /* keyboard focus visible for accessibility */
-  #result button:focus-visible, #result .btn:focus-visible{outline:3px solid rgba(255,255,255,0.12);outline-offset:4px;}
-  @keyframes resultGradient{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
-
-  /* Force exact same animated palette & glow for all actionable buttons in the result area */
-  #result #again, #result #wrongBtn, #result #newGame, #result button{ 
-    background:linear-gradient(90deg,#0ea5ff 0%, #60a5fa 25%, #ff7a5a 60%, #ff4d4d 100%);
-    background-size:300% 100%;
-    animation:resultGradient 5.5s linear infinite;
-    color:#041026;
+  /* ===== RESULT & EXPLAIN BUTTONS — theme-aware shimmer ===== */
+  /* shimmer sweep using a wide background that scrolls */
+  @keyframes btnShimmer{0%{background-position:200% center}100%{background-position:-200% center}}
+  #result button,#result .btn,
+  #result #again,#result #wrongBtn,#result #newGame{
+    background:linear-gradient(90deg,var(--accent),var(--accent-2),var(--accent));
+    background-size:200% auto;
+    animation:btnShimmer 3s linear infinite;
+    color:#fff;
     font-weight:800;
     border:none;
-    padding:10px 14px;
+    padding:10px 16px;
     border-radius:10px;
+    box-shadow:0 6px 24px rgba(var(--ar),0.25);
+    overflow:hidden;
   }
-  #result #again:hover, #result #wrongBtn:hover, #result #newGame:hover, #result button:hover{
-    transform:translateY(-6px) scale(1.03);
-    box-shadow:0 20px 48px rgba(255,77,77,0.18);
+  #result button:hover,#result .btn:hover,
+  #result #again:hover,#result #wrongBtn:hover,#result #newGame:hover{
+    transform:translateY(-5px) scale(1.04);
+    box-shadow:0 14px 40px rgba(var(--ar),0.4);
   }
-  /* keep the soft halo glow behind these buttons using the ::before pseudo-element */
-  #result #again::before, #result #wrongBtn::before, #result #newGame::before, #result button::before{
-    background:radial-gradient(closest-side, rgba(14,165,255,0.22), rgba(3,105,161,0.06) 45%, transparent 60%);
+  #result button:focus-visible,#result .btn:focus-visible{
+    outline:3px solid rgba(var(--ar),0.5);outline-offset:4px;
   }
-  /* stronger focus-visible for keyboard users */
-  #result #again:focus-visible, #result #wrongBtn:focus-visible, #result #newGame:focus-visible, #result button:focus-visible{
-    outline:3px solid rgba(255,255,255,0.12);outline-offset:4px;
-  }
-
-  /* Apply same look to the explain panel's Back to result and Investigate/Play again buttons */
-  #explain #backToResult, #explain #investigateBtn, #explain #restartFromExplain, #explain button{
-    background:linear-gradient(90deg,#0ea5ff 0%, #60a5fa 25%, #ff7a5a 60%, #ff4d4d 100%);
-    background-size:300% 100%;
-    animation:resultGradient 5.5s linear infinite;
-    color:#041026;
+  /* explain buttons same treatment */
+  #explain #backToResult,#explain #investigateBtn,#explain #restartFromExplain,#explain button{
+    background:linear-gradient(90deg,var(--accent),var(--accent-2),var(--accent));
+    background-size:200% auto;
+    animation:btnShimmer 3s linear infinite;
+    color:#fff;
     font-weight:800;
     border:none;
-    padding:10px 14px;border-radius:10px;
+    padding:10px 16px;border-radius:10px;
+    box-shadow:0 6px 24px rgba(var(--ar),0.2);
+    overflow:hidden;
   }
-  #explain #backToResult:hover, #explain #investigateBtn:hover, #explain #restartFromExplain:hover, #explain button:hover{
-    transform:translateY(-6px) scale(1.03); box-shadow:0 18px 48px rgba(255,77,77,0.16);
+  #explain #backToResult:hover,#explain #investigateBtn:hover,#explain #restartFromExplain:hover,#explain button:hover{
+    transform:translateY(-5px) scale(1.04);box-shadow:0 14px 40px rgba(var(--ar),0.35);
   }
-  #explain #backToResult:focus-visible, #explain #investigateBtn:focus-visible, #explain #restartFromExplain:focus-visible, #explain button:focus-visible{outline:3px solid rgba(255,255,255,0.12);outline-offset:4px}
+  #explain #backToResult:focus-visible,#explain #investigateBtn:focus-visible,#explain #restartFromExplain:focus-visible,#explain button:focus-visible{outline:3px solid rgba(var(--ar),0.5);outline-offset:4px}
+  /* ===== SUCCESS OVERLAY ===== */
+  #confettiCanvas{position:fixed;inset:0;width:100vw;height:100vh;pointer-events:none;z-index:300;display:none}
+  #successBanner{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) scale(0);z-index:310;pointer-events:none;display:none;
+    background:linear-gradient(135deg,var(--accent),var(--accent-2));
+    padding:16px 40px;border-radius:20px;
+    font-size:2rem;font-weight:900;color:#fff;
+    box-shadow:0 20px 60px rgba(var(--ar),0.5);
+    text-align:center;letter-spacing:2px;
+    animation:none;white-space:nowrap;
+  }
+  #successBanner.show{display:block;animation:bannerPop .5s cubic-bezier(.34,1.56,.64,1) forwards}
+  @keyframes bannerPop{0%{transform:translate(-50%,-50%) scale(0);opacity:0}60%{transform:translate(-50%,-50%) scale(1.08)}100%{transform:translate(-50%,-50%) scale(1);opacity:1}}
+  /* success ring on result card */
+  #resultCard.success-glow{animation:successRing 1.8s ease-in-out 3}
+  @keyframes successRing{0%,100%{box-shadow:0 6px 18px rgba(2,6,23,0.5)}50%{box-shadow:0 0 0 6px rgba(var(--ar),0.35),0 20px 60px rgba(var(--ar),0.3)}}
+  /* flash overlay for failure */
+  #flashOverlay{position:fixed;inset:0;z-index:299;pointer-events:none;background:rgba(239,68,68,0);transition:background .15s}
+  #flashOverlay.flash{background:rgba(239,68,68,0.18)}
 
   /* welcome background blobs */
   .welcome{position:relative;overflow:visible}
@@ -208,9 +280,9 @@
       #keypad .btn{padding:12px;font-size:1.05rem;border-radius:10px}
       .preset{width:100%;text-align:center}
   /* Investigate full-screen overlay */
-  #investigateDetailFull{background:rgba(4,6,12,0.6);position:fixed;inset:0;z-index:80;display:none;align-items:center;justify-content:center}
-  #investigateDetailFull .card{max-height:86vh;overflow:auto}
-  #investigateDetailFull.enter{animation:modalIn .32s ease both}
+  #investigateDetailFull{background:var(--bg);position:fixed;inset:0;z-index:80;display:none;align-items:flex-start;justify-content:center;overflow:auto}
+  #investigateDetailFull .card{width:100%;max-width:100vw;min-height:100vh;border-radius:0;border:none;box-shadow:none;margin:0;padding:24px 16px;}
+  #investigateDetailFull.enter{animation:gameIn .4s ease both}
   #investigateDetailFull.exit{animation:welcomeOut .36s ease both}
   /* Candidate buttons simplified */
   #investigateList .btn{padding:10px;background:transparent;border:1px solid rgba(255,255,255,0.06);color:var(--muted);border-radius:8px}
@@ -247,6 +319,24 @@
     </style>
   </head>
   <body>
+    <!-- animated background orbs -->
+    <div class="bg-orbs" aria-hidden="true"><div class="orb orb1"></div><div class="orb orb2"></div><div class="orb orb3"></div></div>
+    <!-- theme switcher -->
+    <div id="themeSwitcher" role="navigation" aria-label="Theme switcher">
+      <button id="themeToggleBtn" title="Change theme" aria-label="Change theme">🎨</button>
+      <div id="themePalette">
+        <div class="theme-dot" data-t="cyber" title="Cyber"><span class="theme-dot-label">Cyber</span></div>
+        <div class="theme-dot" data-t="inferno" title="Inferno"><span class="theme-dot-label">Inferno</span></div>
+        <div class="theme-dot" data-t="forest" title="Forest"><span class="theme-dot-label">Forest</span></div>
+        <div class="theme-dot" data-t="royal" title="Royal"><span class="theme-dot-label">Royal</span></div>
+        <div class="theme-dot" data-t="rose" title="Rose</span>"><span class="theme-dot-label">Rose</span></div>
+        <div class="theme-dot" data-t="ocean" title="Ocean"><span class="theme-dot-label">Ocean</span></div>
+      </div>
+    </div>
+    <!-- confetti canvas + success banner + flash overlay -->
+    <canvas id="confettiCanvas" aria-hidden="true"></canvas>
+    <div id="successBanner" aria-hidden="true">YOU GOT IT! &#127881;</div>
+    <div id="flashOverlay" aria-hidden="true"></div>
     <div class="wrap">
       <div class="panel">
         
@@ -300,18 +390,7 @@
           </div>
         </section>
 
-        <!-- Full-window candidate detail (animated) -->
-        <section id="investigateDetailFull" class="section" aria-hidden="true" style="display:none;align-items:center;justify-content:center;">
-          <div class="card pop" style="max-width:820px;width:95%;padding:20px;position:relative">
-            <button id="closeInvestigateFull" class="btn ghost" style="position:absolute;right:12px;top:12px">Close</button>
-            <div id="investigateFullTitle" class="cardTitle">Candidate</div>
-            <div id="investigateFullBody" class="muted" style="margin-top:12px;white-space:pre-wrap"></div>
-            <div style="display:flex;gap:8px;margin-top:12px;justify-content:flex-end">
-              <button id="investigateBackToList" class="btn ghost">Back to list</button>
-              <button id="investigateRestart" class="btn">Play again</button>
-            </div>
-          </div>
-        </section>
+
 
         
         
@@ -384,12 +463,18 @@
           </div>
 
           <div id="questionArea" class="card" style="margin-top:12px">
-            <div id="cardTitle" class="cardTitle">Card 1 — bit value 1</div>
+            <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:8px">
+              <div id="cardTitle" class="cardTitle" style="margin:0">Question 1</div>
+              <span id="parityBadge"></span>
+            </div>
+            <div id="historyRow"></div>
+            <div id="progressBar"><div id="progressFill"></div></div>
             <div id="cardNumbers" class="nums" aria-live="polite"></div>
-            <div class="controls">
-              <button id="yesBtn" class="btn">Yes</button>
-              <button id="noBtn" class="btn ghost">No</button>
-              <div id="progress" class="muted"></div>
+            <div class="controls" style="margin-top:14px">
+              <button id="yesBtn" class="btn">✓ Yes</button>
+              <button id="noBtn" class="btn ghost">✗ No</button>
+              <button id="prevBtn" class="btn ghost" disabled style="margin-left:auto">&#8592; Prev</button>
+              <div id="progress" class="muted" style="font-size:.85rem"></div>
             </div>
           </div>
         </section>
@@ -411,6 +496,19 @@
         <footer>if you do make any mistake in the quesion the answer will be also wrong so don't make any mistakes</footer>
       </div>
     </div>
+    <!-- Full-window candidate detail (animated) -->
+    <section id="investigateDetailFull" class="section" aria-hidden="true" style="display:none;align-items:flex-start;justify-content:center;">
+      <div class="card pop" style="position:relative;width:100%;height:100vh;border-radius:0;border:none;box-shadow:none;">
+        <button id="closeInvestigateFull" class="btn ghost" style="position:absolute;right:16px;top:16px">Close</button>
+        <div id="investigateFullTitle" class="cardTitle" style="font-size:1.6rem;margin-bottom:16px;">Candidate</div>
+        <div id="investigateFullBody" class="muted" style="margin-top:12px;white-space:pre-wrap"></div>
+        <div style="display:flex;gap:8px;margin-top:24px;justify-content:flex-end">
+          <button id="investigateBackToList" class="btn ghost">Back to list</button>
+          <button id="investigateRestart" class="btn">Play again</button>
+        </div>
+      </div>
+    </section>
+
     <div id="infoModal" role="dialog" aria-modal="true" aria-hidden="true" style="display:none;position:fixed;inset:0;background:rgba(2,6,23,0.6);align-items:center;justify-content:center;z-index:40">
       <div style="background:var(--card);padding:18px;border-radius:12px;max-width:820px;color:inherit;border:1px solid rgba(255,255,255,0.04);box-shadow:0 10px 30px rgba(0,0,0,0.6)">
         <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:8px">
@@ -481,6 +579,7 @@
         let step = 0;
         let sum = 0;
   let answers = []; // record user's answers per shown card: true = yes, false = no
+  let sumHistory = []; // snapshot of sum BEFORE each answer, used for Previous rollback
         let maxVal = 31;
     const MIN_MAX = 15;
 
@@ -539,14 +638,41 @@
           return arr;
         }
 
+        function updateHistoryDots(){
+          const row = document.getElementById('historyRow'); if(!row) return;
+          row.innerHTML = '';
+          for(let i=0;i<cards.length;i++){
+            const d=document.createElement('div');
+            if(i<step){ d.className='hdot '+(answers[i]?'yes':'no'); d.title='Q'+(i+1)+': '+(answers[i]?'Yes':'No'); }
+            else if(i===step){ d.className='hdot current'; d.title='Current'; }
+            else { d.className='hdot'; d.title='Q'+(i+1); }
+            row.appendChild(d);
+          }
+        }
         function render(){
           const card = cards[step];
-          cardTitle.textContent = `Card ${step+1} of ${cards.length} — bit value ${1<<card.bit}`;
+          cardTitle.textContent = `Question ${step+1} of ${cards.length} — is your number in this list?`;
           cardNumbers.innerHTML = '';
-          card.values.forEach(v=>{const d=document.createElement('div');d.className='num';d.textContent=v;cardNumbers.appendChild(d)});
-          progress.textContent = `${step+1}/${cards.length}`;
-          cardNumbers.parentElement.classList.add('pop');
-          setTimeout(()=>cardNumbers.parentElement.classList.remove('pop'),360);
+          // ---- PARITY FIX: filter displayed numbers by parity when known ----
+          let displayVals = card.values;
+          if(parityKnown && card.bit !== 0){
+            const filtered = card.values.filter(v => parityIsOdd ? (v%2!==0) : (v%2===0));
+            if(filtered.length > 0) displayVals = filtered;
+          }
+          displayVals.forEach(v=>{
+            const d=document.createElement('div');d.className='num';d.textContent=v;cardNumbers.appendChild(d);
+          });
+          // update parity badge
+          const pb=document.getElementById('parityBadge');
+          if(pb){ if(parityKnown){ pb.style.display='inline-flex'; pb.textContent=(parityIsOdd?'🔢 Odd':'🔢 Even'); } else pb.style.display='none'; }
+          // update progress bar
+          const pf=document.getElementById('progressFill');
+          if(pf) pf.style.width=((step/cards.length)*100)+'%';
+          // update history dots
+          updateHistoryDots();
+          progress.textContent = `${step+1} / ${cards.length}`;
+          const qa=document.getElementById('questionArea');
+          if(qa){ qa.classList.remove('pop'); void qa.offsetWidth; qa.classList.add('pop'); setTimeout(()=>qa.classList.remove('pop'),360); }
         }
 
         function finish(){
@@ -565,25 +691,86 @@
           }
         }
 
-  function resetGame(){ step=0; sum=0; answers = []; }
+  const prevBtn = document.getElementById('prevBtn');
+  function updatePrevBtn(){ if(prevBtn) prevBtn.disabled = step <= (parityKnown && cards.length>0 && cards[0].bit===0 ? 1 : 0); }
+  function resetGame(){ step=0; sum=0; answers = []; sumHistory = []; if(prevBtn) prevBtn.disabled = true; }
 
 
         function playSuccessAnimation(){
-          const root = resultCard;
-          const pieces = [];
-          for(let i=0;i<18;i++){
-            const p = document.createElement('div'); p.className='confetti-piece';
-            p.style.left = `${20 + Math.random()*60}%`; p.style.background = (Math.random()>0.5)?'var(--accent)':'var(--accent-2)';
-            p.style.transform = `translateY(${20 + Math.random()*40}px) rotate(${Math.random()*360}deg)`;
-            root.appendChild(p); pieces.push(p);
-            setTimeout(()=>p.classList.add('explode'), 20 + i*30 + Math.random()*80);
+          // --- glow ring on result card ---
+          resultCard.classList.add('success-glow');
+          setTimeout(()=>resultCard.classList.remove('success-glow'), 5500);
+
+          // --- show banner ---
+          const banner = document.getElementById('successBanner');
+          if(banner){ banner.style.display='block'; banner.classList.add('show'); setTimeout(()=>{ banner.classList.remove('show'); banner.style.display='none'; }, 2200); }
+
+          // --- canvas confetti burst ---
+          const canvas = document.getElementById('confettiCanvas');
+          if(!canvas) return;
+          canvas.style.display = 'block';
+          canvas.width  = window.innerWidth;
+          canvas.height = window.innerHeight;
+          const ctx = canvas.getContext('2d');
+          // get current theme accent colours from CSS variables
+          const st = getComputedStyle(document.documentElement);
+          const c1 = st.getPropertyValue('--accent').trim() || '#06b6d4';
+          const c2 = st.getPropertyValue('--accent-2').trim() || '#7c3aed';
+          const palette = [c1, c2, '#ffffff', '#facc15', '#f472b6', '#4ade80'];
+          const particles = [];
+          const cx = canvas.width / 2;
+          const cy = canvas.height * 0.42;
+          for(let i = 0; i < 180; i++){
+            const angle = Math.random() * Math.PI * 2;
+            const speed = 4 + Math.random() * 10;
+            particles.push({
+              x: cx, y: cy,
+              vx: Math.cos(angle) * speed,
+              vy: Math.sin(angle) * speed - 4,
+              w: 6 + Math.random() * 8,
+              h: 10 + Math.random() * 10,
+              rot: Math.random() * 360,
+              rotV: (Math.random() - 0.5) * 12,
+              color: palette[Math.floor(Math.random() * palette.length)],
+              life: 1,
+              decay: 0.012 + Math.random() * 0.01,
+              shape: Math.random() > 0.5 ? 'rect' : 'circle'
+            });
           }
-          setTimeout(()=>pieces.forEach(p=>p.remove()), 1200);
+          let raf;
+          function drawConfetti(){
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            let alive = false;
+            particles.forEach(p=>{
+              p.x  += p.vx;  p.y  += p.vy;  p.vy += 0.22;
+              p.rot += p.rotV; p.life -= p.decay;
+              if(p.life <= 0) return;
+              alive = true;
+              ctx.save();
+              ctx.globalAlpha = p.life;
+              ctx.translate(p.x, p.y);
+              ctx.rotate(p.rot * Math.PI / 180);
+              ctx.fillStyle = p.color;
+              if(p.shape === 'rect'){
+                ctx.fillRect(-p.w/2, -p.h/2, p.w, p.h);
+              } else {
+                ctx.beginPath(); ctx.arc(0, 0, p.w/2, 0, Math.PI*2); ctx.fill();
+              }
+              ctx.restore();
+            });
+            if(alive){ raf = requestAnimationFrame(drawConfetti); }
+            else { ctx.clearRect(0,0,canvas.width,canvas.height); canvas.style.display='none'; }
+          }
+          drawConfetti();
+          setTimeout(()=>{ cancelAnimationFrame(raf); ctx.clearRect(0,0,canvas.width,canvas.height); canvas.style.display='none'; }, 4500);
         }
 
         function playFailureAnimation(){
           resultCard.classList.add('shake');
-          setTimeout(()=>resultCard.classList.remove('shake'),700);
+          setTimeout(()=>resultCard.classList.remove('shake'), 700);
+          // red flash
+          const fl = document.getElementById('flashOverlay');
+          if(fl){ fl.classList.add('flash'); setTimeout(()=>fl.classList.remove('flash'), 350); }
         }
 
   howBtn.addEventListener('click', ()=>{ infoModal.classList.add('open'); infoModal.setAttribute('aria-hidden','false'); closeInfo.focus(); });
@@ -672,10 +859,12 @@
             const lsbBit = cards[0].bit; // should be 0
             if(lsbBit === 0){
               if(parityIsOdd){ sum += (1<<0); }
-              // skip the LSB card by incrementing step
+              // skip the LSB card by incrementing step (previous cannot go before this)
               step = 1;
             }
           }
+          // disable Previous at the start of questions
+          updatePrevBtn();
           // show question area and render current card
           parityArea.style.display = 'none';
           const q = document.getElementById('questionArea'); q.style.display = 'block';
@@ -687,18 +876,41 @@
         skipParity.addEventListener('click', ()=>{ parityKnown = false; startQuestionsWithParity(); });
 
         yesBtn.addEventListener('click', ()=>{
+          // snapshot sum before applying answer (enables Previous rollback)
+          sumHistory[step] = sum;
           // record answer
           answers[step] = true;
           sum += (1<<cards[step].bit);
           step++;
+          updatePrevBtn();
           if(step<cards.length) render(); else finish();
         });
 
         noBtn.addEventListener('click', ()=>{
+          sumHistory[step] = sum;
           answers[step] = false;
           step++;
+          updatePrevBtn();
           if(step<cards.length) render(); else finish();
         });
+
+        if(prevBtn){
+          prevBtn.addEventListener('click', ()=>{
+            // determine the minimum reachable step
+            const minStep = (parityKnown && cards.length>0 && cards[0].bit===0) ? 1 : 0;
+            if(step <= minStep) return;
+            step--;
+            // restore sum from snapshot (undo last answer)
+            sum = sumHistory[step];
+            // clear the recorded answer for this step so it can be re-answered
+            answers[step] = undefined;
+            updatePrevBtn();
+            render();
+            // pulse card to signal going back
+            const qArea = document.getElementById('questionArea');
+            if(qArea){ qArea.classList.remove('pop'); void qArea.offsetWidth; qArea.classList.add('pop'); setTimeout(()=>qArea.classList.remove('pop'),360); }
+          });
+        }
 
         function startNewSession(){
           // clear state
@@ -1024,6 +1236,36 @@
           welcomeArea.addEventListener('mouseenter', ()=>{ if(panelEl) panelEl.style.transition='transform .08s linear'; });
           welcomeArea.addEventListener('mouseleave', ()=>{ if(panelEl){ panelEl.style.transition='transform .6s cubic-bezier(.2,.9,.2,1)'; panelEl.style.transform='none'; } });
         })();
+
+        // ===== THEME SWITCHER =====
+        (function(){
+          const THEMES=['cyber','inferno','forest','royal','rose','ocean'];
+          const saved=localStorage.getItem('gmn-theme')||'cyber';
+          function applyTheme(t){
+            document.documentElement.setAttribute('data-theme',t);
+            localStorage.setItem('gmn-theme',t);
+            document.querySelectorAll('.theme-dot').forEach(d=>d.classList.toggle('active',d.dataset.t===t));
+          }
+          applyTheme(saved);
+          const toggleBtn=document.getElementById('themeToggleBtn');
+          const palette=document.getElementById('themePalette');
+          toggleBtn.addEventListener('click',()=>palette.classList.toggle('open'));
+          document.addEventListener('click',e=>{ if(!e.target.closest('#themeSwitcher')) palette.classList.remove('open'); });
+          document.querySelectorAll('.theme-dot').forEach(dot=>{
+            dot.addEventListener('click',()=>{ applyTheme(dot.dataset.t); palette.classList.remove('open'); });
+          });
+        })();
+
+        // ===== RIPPLE EFFECT =====
+        document.addEventListener('click',function(e){
+          const btn=e.target.closest('.btn');
+          if(!btn) return;
+          const r=document.createElement('span'); r.className='ripple';
+          const rect=btn.getBoundingClientRect();
+          const size=Math.max(rect.width,rect.height);
+          r.style.cssText=`width:${size}px;height:${size}px;left:${e.clientX-rect.left-size/2}px;top:${e.clientY-rect.top-size/2}px`;
+          btn.appendChild(r); setTimeout(()=>r.remove(),500);
+        });
       })();
     </script>
   </body>
