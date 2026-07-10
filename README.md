@@ -1,6 +1,6 @@
 # Mind Reader — Guess My Number 🔮
 
-[![GH Pages Deploy](https://img.shields.io/github/deployments/cid-moosa/number-guessing-/github-pages?label=Live%20Demo&style=for-the-badge)](https://cid-moosa.github.io/number-guessing-game/)
+[![GH Pages Deploy](https://img.shields.io/github/deployments/cid-moosa/html-number-guessing-game/github-pages?label=Live%20Demo&style=for-the-badge)](https://cid-moosa.github.io/html-number-guessing-game/)
 [![License: MIT](https://img.shields.io/github/license/cid-moosa/number-guessing-?style=for-the-badge)](LICENSE)
 [![HTML/CSS/JS](https://img.shields.io/badge/Language-HTML%20%7C%20CSS%20%7C%20JS-06b6d4?style=for-the-badge)](#)
 
@@ -33,7 +33,7 @@ A premium, interactive mathematical mind-reading game built with vanilla web tec
 No compilation, local servers, or installation required.
 
 ### 1. Run it instantly in one click
-👉 **[Play the Live Demo Here!](https://cid-moosa.github.io/number-guessing-game/)**
+👉 **[Play the Live Demo Here!](https://cid-moosa.github.io/html-number-guessing-game/)**
 
 ### 2. Run locally in 3 steps
 Clone, navigate to the directory, and double-click `index.html` to open it in your browser:
