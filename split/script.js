@@ -1,4 +1,4 @@
-﻿(function(){
+(function(){
   const welcome = document.getElementById('welcome');
   const main = document.getElementById('main');
   const difficultySection = document.getElementById('difficultySection');
@@ -30,28 +30,43 @@
 
         let welcomeTimer = null;
         function showSection(el){
-          // hide all sections then reveal the requested one
-          document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
-          if(el && el.classList) el.classList.add('active');
-          // toggle 3D welcome panel class
           const panelEl = document.querySelector('.panel');
           const wt = document.getElementById('welcomeTrail');
-          if(panelEl){
+          if(!panelEl){
+            document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+            if(el && el.classList) el.classList.add('active');
+            return;
+          }
+
+          // 1. Trigger flip-out transition
+          panelEl.classList.add('flip-out');
+
+          setTimeout(()=>{
+            // 2. Hide old section, show new section
+            document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+            if(el && el.classList) el.classList.add('active');
+
+            // 3. Prepare flip-in (rotated 3D perspective, transparent)
+            panelEl.classList.remove('flip-out');
+            panelEl.classList.add('flip-in');
+
+            // 4. Force reflow
+            void panelEl.offsetWidth;
+
+            // 5. Release flip-in class to animate back to 0deg
+            panelEl.classList.remove('flip-in');
+
             if(el && el.id === 'welcome'){
-              // enable the welcome-only 3D styling
               panelEl.classList.add('welcome-3d');
-              // ensure the transform resets smoothly when later removed
               panelEl.style.transition = 'transform .08s linear';
               if(wt) wt.style.display = 'block';
             } else {
-              // leaving welcome: remove 3D class and reset any transient transform
               panelEl.classList.remove('welcome-3d');
-              // add a smooth reset transition so the panel returns to neutral
               panelEl.style.transition = 'transform .6s cubic-bezier(.2,.9,.2,1)';
               panelEl.style.transform = 'none';
               if(wt) wt.style.display = 'none';
             }
-          }
+          }, 280);
         }
 
         function animateWelcomeExit(toSection){
@@ -104,8 +119,12 @@
             const filtered = card.values.filter(v => parityIsOdd ? (v%2!==0) : (v%2===0));
             if(filtered.length > 0) displayVals = filtered;
           }
-          displayVals.forEach(v=>{
-            const d=document.createElement('div');d.className='num';d.textContent=v;cardNumbers.appendChild(d);
+          displayVals.forEach((v, index)=>{
+            const d=document.createElement('div');
+            d.className='num';
+            d.textContent=v;
+            d.style.setProperty('--delay', `${index * 12}ms`);
+            cardNumbers.appendChild(d);
           });
           // update parity badge
           const pb=document.getElementById('parityBadge');
@@ -113,6 +132,12 @@
           // update progress bar
           const pf=document.getElementById('progressFill');
           if(pf) pf.style.width=((step/cards.length)*100)+'%';
+          // update telemetry sync rate text
+          const syncRateEl = document.getElementById('syncRate');
+          if(syncRateEl && cards.length > 0){
+            const pct = Math.round((step / cards.length) * 100);
+            syncRateEl.textContent = `Sync: ${pct}%`;
+          }
           // update history dots
           updateHistoryDots();
           progress.textContent = `${step+1} / ${cards.length}`;
@@ -121,19 +146,80 @@
         }
 
         function finish(){
-          if(sum>=1 && sum<=maxVal){
-            showSection(result);
-            resultNum.textContent = sum;
-            resultMessage.textContent = 'Nice! Thanks for playing.';
-            playSuccessAnimation();
-          } else {
-            showSection(result);
-            resultNum.textContent = '—';
-            resultMessage.textContent = 'I could not identify a valid number. Maybe you changed your mind?';
-            playFailureAnimation();
-            // prepare candidate list for investigation
-            prepareCandidates();
-          }
+          // 1. Show the reveal section
+          showSection(document.getElementById('reveal'));
+          
+          const revealDial = document.getElementById('revealDial');
+          const revealStatus = document.getElementById('revealStatus');
+          
+          let counter = 0;
+          const duration = 1800; // 1.8 seconds
+          const intervalMs = 40;
+          const stepsCount = duration / intervalMs;
+          
+          const interval = setInterval(() => {
+            // Spin random numbers
+            const randVal = Math.floor(Math.random() * maxVal) + 1;
+            if (revealDial) revealDial.textContent = randVal < 10 ? '0' + randVal : randVal;
+            
+            counter++;
+            // Update statuses in phases
+            if (revealStatus) {
+              if (counter < stepsCount * 0.35) {
+                revealStatus.textContent = 'ALIGNING BRAINWAVES...';
+              } else if (counter < stepsCount * 0.7) {
+                revealStatus.textContent = 'RESOLVING BINARY VECTORS...';
+              } else {
+                revealStatus.textContent = 'DECODING MENTAL IMAGE...';
+              }
+            }
+            
+            if (counter >= stepsCount) {
+              clearInterval(interval);
+              
+              // 2. Lock onto actual result
+              const finalVal = sum;
+              const isValid = finalVal >= 1 && finalVal <= maxVal;
+              
+              if (revealDial) {
+                if (isValid) {
+                  revealDial.textContent = finalVal < 10 ? '0' + finalVal : finalVal;
+                  revealDial.style.color = 'var(--success)';
+                  revealDial.style.textShadow = '0 0 25px var(--success)';
+                } else {
+                  revealDial.textContent = '??';
+                  revealDial.style.color = 'var(--danger)';
+                  revealDial.style.textShadow = '0 0 25px var(--danger)';
+                }
+              }
+              
+              if (revealStatus) {
+                revealStatus.textContent = isValid ? 'PATTERN STABILIZED!' : 'DECISION TREE ERROR';
+              }
+              
+              // Small pause to digest lock, then transition to result screen
+              setTimeout(() => {
+                // Reset dial styling for next run
+                if (revealDial) {
+                  revealDial.style.color = '';
+                  revealDial.style.textShadow = '';
+                }
+                
+                if (isValid) {
+                  showSection(result);
+                  resultNum.textContent = finalVal;
+                  resultMessage.textContent = 'Nice! Thanks for playing.';
+                  playSuccessAnimation();
+                } else {
+                  showSection(result);
+                  resultNum.textContent = '—';
+                  resultMessage.textContent = 'I could not identify a valid number. Maybe you changed your mind?';
+                  playFailureAnimation();
+                  prepareCandidates();
+                }
+              }, 700);
+            }
+          }, intervalMs);
         }
 
   const prevBtn = document.getElementById('prevBtn');
@@ -320,7 +406,8 @@
         evenBtn.addEventListener('click', ()=>{ parityKnown = true; parityIsOdd = false; startQuestionsWithParity(); });
         skipParity.addEventListener('click', ()=>{ parityKnown = false; startQuestionsWithParity(); });
 
-        yesBtn.addEventListener('click', ()=>{
+        yesBtn.addEventListener('click', (e)=>{
+          createClickParticles(e);
           // snapshot sum before applying answer (enables Previous rollback)
           sumHistory[step] = sum;
           // record answer
@@ -331,7 +418,8 @@
           if(step<cards.length) render(); else finish();
         });
 
-        noBtn.addEventListener('click', ()=>{
+        noBtn.addEventListener('click', (e)=>{
+          createClickParticles(e);
           sumHistory[step] = sum;
           answers[step] = false;
           step++;
@@ -667,20 +755,117 @@
           function onMove(e){
             const x = e.clientX; const y = e.clientY;
             spawn(x, y);
-            // only tilt the panel while the welcome section is active
-            const welcomeActive = document.querySelector('#welcome').classList.contains('active');
-            if(!welcomeActive) return;
-            const rect = welcomeArea.getBoundingClientRect();
+            
+            if(!panelEl) return;
+            const rect = panelEl.getBoundingClientRect();
             const cx = rect.width/2 + rect.left; const cy = rect.height/2 + rect.top;
-            const rx = (y - cy) / (cy - rect.top); const ry = (x - cx) / (cx - rect.left);
-            if(panelEl) panelEl.style.transform = `rotateX(${rx*6}deg) rotateY(${ry*8}deg)`;
+            const rx = (y - cy) / (window.innerHeight / 2); 
+            const ry = (x - cx) / (window.innerWidth / 2);
+            panelEl.style.transform = `rotateX(${-rx*5}deg) rotateY(${ry*5}deg)`;
           }
-          // attach to window so the trail covers the viewport; spawning gated by active welcome
           window.addEventListener('mousemove', onMove);
-          // still use welcomeArea enter/leave to tweak panel transitions
-          welcomeArea.addEventListener('mouseenter', ()=>{ if(panelEl) panelEl.style.transition='transform .08s linear'; });
-          welcomeArea.addEventListener('mouseleave', ()=>{ if(panelEl){ panelEl.style.transition='transform .6s cubic-bezier(.2,.9,.2,1)'; panelEl.style.transform='none'; } });
+          panelEl.addEventListener('mouseenter', ()=>{ panelEl.style.transition='transform .08s linear'; });
+          panelEl.addEventListener('mouseleave', ()=>{ panelEl.style.transition='transform .6s cubic-bezier(.2,.9,.2,1)'; panelEl.style.transform='none'; });
         })();
+
+        // ===== CLICK PARTICLE BURST =====
+        function createClickParticles(e) {
+          if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+          const x = e.clientX;
+          const y = e.clientY;
+          
+          const container = document.createElement('div');
+          container.style.position = 'fixed';
+          container.style.left = '0';
+          container.style.top = '0';
+          container.style.width = '100vw';
+          container.style.height = '100vh';
+          container.style.pointerEvents = 'none';
+          container.style.zIndex = '999';
+          document.body.appendChild(container);
+          
+          const color = e.currentTarget.id === 'yesBtn' ? 'var(--success)' : 'var(--accent-2)';
+          const count = 16;
+          
+          for (let i = 0; i < count; i++) {
+            const p = document.createElement('div');
+            p.style.position = 'absolute';
+            p.style.left = `${x}px`;
+            p.style.top = `${y}px`;
+            const size = 4 + Math.random() * 6;
+            p.style.width = `${size}px`;
+            p.style.height = `${size}px`;
+            p.style.borderRadius = '50%';
+            p.style.background = color;
+            p.style.boxShadow = `0 0 8px ${color}`;
+            
+            const angle = Math.random() * Math.PI * 2;
+            const speed = 2 + Math.random() * 5;
+            const vx = Math.cos(angle) * speed;
+            const vy = Math.sin(angle) * speed - 1.5;
+            
+            container.appendChild(p);
+            
+            let age = 0;
+            const life = 25 + Math.random() * 20;
+            
+            function tick() {
+              const curX = parseFloat(p.style.left) + vx;
+              const curY = parseFloat(p.style.top) + vy;
+              p.style.left = `${curX}px`;
+              p.style.top = `${curY}px`;
+              
+              const opacity = 1 - (age / life);
+              p.style.opacity = opacity;
+              p.style.transform = `scale(${opacity})`;
+              
+              age++;
+              if (age < life) {
+                requestAnimationFrame(tick);
+              } else {
+                p.remove();
+              }
+            }
+            requestAnimationFrame(tick);
+          }
+          
+          setTimeout(() => container.remove(), 1000);
+        }
+
+        // ===== BRAINWAVE EEG PATH ANIMATION =====
+        let brainwavePhase = 0;
+        function animateBrainwave() {
+          const path = document.querySelector('.brainwave-path');
+          if (path && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+            brainwavePhase += 0.08;
+            const points = [];
+            const width = 400;
+            const height = 60;
+            const midY = height / 2;
+            
+            const totalSteps = cards.length || 5;
+            const progress = totalSteps > 0 ? (step / totalSteps) : 0;
+            const chaos = Math.max(0, 1 - progress); 
+            
+            const amplitude = 6 + chaos * 14; 
+            const noiseScale = chaos * 12;
+            
+            points.push(`M 0 ${midY}`);
+            for (let x = 10; x <= width; x += 15) {
+              const frequency = (x / width) * Math.PI * (4 + (1 - chaos) * 4) + brainwavePhase;
+              let y = midY + Math.sin(frequency) * amplitude;
+              
+              if (chaos > 0.1) {
+                const noise = (Math.sin(x * 0.05 + brainwavePhase * 2) * Math.cos(x * 0.1 - brainwavePhase)) * noiseScale;
+                y += noise;
+              }
+              points.push(`L ${x} ${y}`);
+            }
+            path.setAttribute('d', points.join(' '));
+          }
+          requestAnimationFrame(animateBrainwave);
+        }
+        requestAnimationFrame(animateBrainwave);
 
         // ===== THEME SWITCHER =====
         (function(){

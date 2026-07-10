@@ -165,9 +165,21 @@
           </div>
 
           <div id="questionArea" class="card" style="margin-top:12px">
+            <div class="scanner-beam" aria-hidden="true"></div>
             <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:8px">
               <div id="cardTitle" class="cardTitle" style="margin:0">Question 1</div>
               <span id="parityBadge"></span>
+            </div>
+            <div class="telemetry-box">
+              <div class="telemetry-header">
+                <span class="telemetry-title"><span class="pulse-dot"></span> Mind-Wave Telemetry</span>
+                <span id="syncRate" class="telemetry-value">Sync: 0%</span>
+              </div>
+              <div class="brainwave-container">
+                <svg class="brainwave-svg" viewBox="0 0 400 60" preserveAspectRatio="none">
+                  <path class="brainwave-path" d="M 0 30 L 400 30" />
+                </svg>
+              </div>
             </div>
             <div id="historyRow"></div>
             <div id="progressBar"><div id="progressFill"></div></div>
@@ -181,7 +193,20 @@
           </div>
         </section>
 
-        
+        <!-- Interstitial Reveal Section -->
+        <section id="reveal" class="section">
+          <div class="welcome" style="gap:20px">
+            <div class="scanning-orb-container">
+              <div class="orb-scanner"></div>
+              <div class="scanner-ring ring-1"></div>
+              <div class="scanner-ring ring-2"></div>
+              <div id="revealDial" class="reveal-dial">00</div>
+            </div>
+            <h2 id="revealStatus" class="telemetry-value" style="font-size:1.3rem;letter-spacing:1px;margin:0">ALIGNING BRAINWAVES...</h2>
+            <div class="reveal-subtext muted">Computing binary matrices & resolving candidates...</div>
+          </div>
+        </section>
+
         <section id="result" class="section">
           <div class="card pop" id="resultCard" style="position:relative;overflow:visible">
             <div class="result">I predict your number is: <strong id="resultNum">—</strong></div>
